@@ -11,7 +11,7 @@ wait for a build but not enough time to switch to a proper task.
 
 ## Project Goals
 
-Fill time. 
-Write as easy and simple as possible.
-Create some code to track and summarize time spent on
+1. Fill time. 
+2. Write as easy and simple as possible.
+3. Create some code to track and summarize time spent on
 different tasks and projects.
