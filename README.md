@@ -1,6 +1,6 @@
 # tt
 
-* WARNING
+## WARNING
 
 Do not expect any of this to compile, not even to make sense.
 It's a toy project, a side project.
@@ -9,7 +9,7 @@ but don't have time to do something proper, for example
 when there is a couple of minutes to fill because I have to
 wait for a build but not enough time to switch to a proper task.
 
-* Project Goals
+## Project Goals
 
 Fill time. 
 Write as easy and simple as possible.
