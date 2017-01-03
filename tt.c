@@ -1,4 +1,4 @@
-#include "tt.h"
+>>#include "tt.h"
 
 tt_d_t* tt_d_new(time_t start, time_t finished){
   tt_d_t* ret = NULL;
@@ -69,6 +69,7 @@ void tt_t_free(tt_t_t* task){
 */
 int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   unsigned newlen = 0;
+  tt_d_t* tmp = NULL;
 
   errno = 0;
   if(!task || !duration)
@@ -82,8 +83,9 @@ int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   }
   if( task->len == task->nruns){
     newlen = 2* (task->len);
-    if(!(task->runs = realloc( newlen * sizeof(tt_d_t))))
+    if(!(tmp = realloc( task->runs, newlen * sizeof(tt_d_t))))
       return -2;
+    task->runs = tmp;
     task->len = newlen;
   }
   task->runs+(task->nruns) = duration;
@@ -142,7 +144,7 @@ tt_p_t* tt_p_new(char* name){
   if(NULL == name)
     return NULL;
 
-  if( NULL == (ret = malloc( sizeof(tt_t_t))))
+  if( NULL == (ret = malloc( sizeof(tt_p_t))))
     return NULL;
 
   if( NULL == (ret->name =  strdup(name))){
@@ -171,5 +173,76 @@ void tt_p_free(tt_p_t* p){
    return index of task or below 0 on error
 */
 int tt_p_add_task(tt_p_t* project, tt_t_t* task){
+  tt_t_t* tmp = NULL;
+  unsigned ret = 0;
+  
+  if(!project)
+    return -1;
+  if(!task)
+    return -2;
+
+  if(NULL == project->tasklist){
+    project->tasklist = task;
+    project->len = 1;
+    project->ntask = 1;
+    return 0;
+  }
+  if( project->len == project->ntask){
+    if( NULL == (tmp = realloc( project->tasklist,
+				sizeof(tt_t_t) * project->len * 2))){
+      return -4;
+    }
+    project->tasklist = tmp;
+    project->len *=2;
+  }
+  project->tasklist[project->ntask]=task;
+  ret = project->ntask++;
+  return ret;
 }
 
+
+/* malloc a tt_db_struct.
+   return NULL on error.
+ */
+tt_db_t* tt_db_new(){
+  tt_db_t* ret = NULL;
+  
+  if( NULL == (ret = malloc( sizeof(tt_db_t))))
+    return NULL;
+
+  ret->projects = NULL;
+  ret->nprojects = 0;
+  ret->len = 0;
+  return ret;  
+}
+
+/* add a project 
+   return index of project or below 0 on error
+*/
+int tt_db_add_project(tt_db_t* db, tt_p_t* project){
+  tt_db_t* tmp = NULL;
+  unsigned ret = 0;
+
+  if(!db)
+    return -1;
+  if(!project)
+    return -2;
+
+  if(NULL == db->projects){
+    project->projects = project;
+    project->len = 1;
+    project->nprojects = 1;
+    return 0;
+  }
+  if( db->len == db->nprojects){
+    if( NULL == (tmp = realloc( db->projects,
+				sizeof(tt_db_t) * db->len * 2))){
+      return -4;
+    }
+    db->projects = tmp;
+    db->len *=2;
+  }
+  db->projects[db->nprojects]=project;
+  ret = db->nprojects++;
+  return ret;
+}

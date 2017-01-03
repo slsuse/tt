@@ -2,6 +2,8 @@
 #define TT_H
 #include <time.h>
 
+#define TT_BUF_LEN 2
+
 /** When working on a task 
     start and stop the time for this task.
  */
@@ -70,8 +72,8 @@ int tt_t_stop_run(tt_t_t* task);
  */
 typedef struct tt_project_struct{
   char* name;
-  tt_t_t* tasklist; /* NULL-terminated array */
-  unsigned ntasks; /* number of registered tasks, index of NULL-terminator */
+  tt_t_t* tasklist;
+  unsigned ntasks; /* number of registered tasks */
   unsigned len; /* current len of the array 'tasklist'. */
 } tt_p_t;
 
