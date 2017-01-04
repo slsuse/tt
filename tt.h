@@ -37,14 +37,14 @@ time_t tt_d_stop(tt_d_t* d);
 */
 typedef struct tt_task_struct{
   char* name;
-  tt_d_t* runs; 
+  tt_d_t** runs; 
   unsigned nruns; /* number of registered runs  */
   unsigned len; /* current len of the array 'runs'. */
 } tt_t_t;
 
 /* malloc a new tt_task_struct
    expect a 0-terminated string which will be copied. */
-tt_t_t* tt_t_new( char* name);
+tt_t_t* tt_t_new( const char* name);
 
 /* recursively free a tt_task_struct.
  */
@@ -72,7 +72,7 @@ int tt_t_stop_run(tt_t_t* task);
  */
 typedef struct tt_project_struct{
   char* name;
-  tt_t_t* tasklist;
+  tt_t_t** tasklist;
   unsigned ntasks; /* number of registered tasks */
   unsigned len; /* current len of the array 'tasklist'. */
 } tt_p_t;
@@ -95,7 +95,7 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task);
     they have been worked on.
 */
 typedef struct tt_db_struct{
-  tt_p_t* projects; /* a NULL-terminated array */
+  tt_p_t** projects; /* an array of projects*/
   unsigned nprojects; /* The number of registered projects, index of NULL terminator */
   unsigned len; /* current len of the array 'projects'. */
 } tt_db_t;
@@ -104,6 +104,10 @@ typedef struct tt_db_struct{
    return NULL on error.
  */
 tt_db_t* tt_db_new();
+
+/* recursively free a tt_db_struct.
+ */
+void tt_db_free(tt_db_t* p);
 
 /* add a project 
    return index of project or below 0 on error
