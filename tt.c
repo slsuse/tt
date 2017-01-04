@@ -72,6 +72,7 @@ void tt_t_free(tt_t_t* task){
 
 /* add a duration to a task
    return index of duration or below 0 on error
+TODO: SIGABORT
 */
 int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   unsigned newlen = 0;
@@ -89,7 +90,8 @@ int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   }
   if( task->len == task->nruns){
     newlen = 2* (task->len);
-    if(!(tmp = realloc( task->runs, newlen * sizeof(tt_d_t*))))
+    if(!(tmp = realloc( task->runs, newlen * sizeof(tt_d_t*)))) /* TODO:
+                                                                   sigabort*/
       return -2;
     task->runs = tmp;
     task->len = newlen;
