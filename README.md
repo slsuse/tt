@@ -13,5 +13,5 @@ wait for a build but not enough time to switch to a proper task.
 
 1. Fill time. 
 2. Write as easy and simple as possible.
-3. Create some code to track and summarize time spent on
-different tasks and projects.
+3. Create some code to track and summarize time spent on different tasks and projects.
+4. Learn and practice git.
