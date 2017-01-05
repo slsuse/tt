@@ -41,7 +41,7 @@ void test_db1(void){
   p = tt_p_new("p");
   t = tt_t_new("t");
   tt_p_add_task(p, t);
-  tt_db_add_project(p);
+  tt_db_add_project(db, p);
   
   tt_db_free(db);
 }
@@ -70,6 +70,10 @@ int main(){
   }
   tt_d_stop(d);
 
+  /* TODO: somewhere between here and tt_t_add_task 
+     a stupid mistake screws up the tasklist array in p. 
+     The problem seems to start in start_run, after it screws t, 
+     it seems to spread to the tasklist. */
   tt_t_start_run(t);
   
   {

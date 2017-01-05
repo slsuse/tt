@@ -72,7 +72,6 @@ void tt_t_free(tt_t_t* task){
 
 /* add a duration to a task
    return index of duration or below 0 on error
-TODO: SIGABORT
 */
 int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   unsigned newlen = 0;
@@ -83,15 +82,15 @@ int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
     return -1;
   
   if(0 == task->nruns){
-    task->runs = &duration;
+    task->runs = malloc(sizeof(tt_d_t*));
+    *(task->runs) = duration;
     task->len = 1;
     task->nruns = 1;
     return 0;
   }
   if( task->len == task->nruns){
     newlen = 2* (task->len);
-    if(!(tmp = realloc( task->runs, newlen * sizeof(tt_d_t*)))) /* TODO:
-                                                                   sigabort*/
+    if(NULL == (tmp = realloc( *(task->runs), sizeof(tt_d_t*) * newlen)))
       return -2;
     task->runs = tmp;
     task->len = newlen;
@@ -156,8 +155,8 @@ tt_p_t* tt_p_new(char* name){
     return NULL;
 
   if( NULL == (ret->name = strdup(name))){
-    free(ret);
-    return NULL;
+    free(ret); 
+   return NULL;
   }
   ret->tasklist = NULL;
   ret->ntasks = 0;
@@ -190,13 +189,14 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task){
     return -2;
 
   if(NULL == project->tasklist){
-    project->tasklist = &task;
+    project->tasklist = malloc(sizeof(tt_t_t*));
+    *(project->tasklist) = task;
     project->len = 1;
     project->ntasks = 1;
     return 0;
   }
   if( project->len == project->ntasks){
-    if( NULL == (tmp = realloc( project->tasklist,
+    if( NULL == (tmp = realloc( *(project->tasklist),
 				sizeof(tt_t_t*)
 				* project->len * 2))){
       return -4;
@@ -238,13 +238,14 @@ int tt_db_add_project(tt_db_t* db, tt_p_t* project){
     return -2;
 
   if(NULL == db->projects){
-    db->projects = &project;
+    db->projects = malloc(sizeof(tt_p_t*));
+    *(db->projects) = project;
     db->len = 1;
     db->nprojects = 1;
     return 0;
   }
   if( db->len == db->nprojects){
-    if( NULL == (tmp = realloc( db->projects,
+    if( NULL == (tmp = realloc( *(db->projects),
 				sizeof(tt_db_t*) * db->len * 2))){
       return -4;
     }
