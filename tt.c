@@ -247,6 +247,45 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task){
   return ret;
 }
 
+/* list all tasks of a given project */
+int tt_p_ls(tt_p_t* p, FILE* stream){
+  if( NULL ==  p)
+    return -1;
+  if(NULL == stream)
+    return -2;
+
+   
+  if(0 == p->ntasks)
+    return 0;
+
+  for( int i = 0; i < p->ntasks; i++){
+    if( 0 > fprintf( stream, "%s\n", p->tasklist[i]->name))
+      return -3;
+  }
+  return p->ntasks;
+}
+
+
+/* list all tasks of a given project recursively */
+int tt_p_lsR(tt_p_t* p, FILE* stream){
+  if( NULL ==  p)
+    return -1;
+  if(NULL == stream)
+    return -2;
+
+   
+  if(0 == p->ntasks)
+    return 0;
+
+  for( int i = 0; i < p->ntasks; i++){
+    if( 0 > fprintf( stream, "%s\n", p->tasklist[i]->name))
+      return -3;
+    if( 0 > tt_t_ls(p->tasklist[i], stream))
+      return -4;
+  }
+  return p->ntasks;
+}
+
 
 /* malloc a tt_db_struct.
    return NULL on error.

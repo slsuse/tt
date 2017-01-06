@@ -98,6 +98,12 @@ void tt_p_free(tt_p_t* p);
 */
 int tt_p_add_task(tt_p_t* project, tt_t_t* task);
 
+/* list all tasks of a given project */
+int tt_p_ls(tt_p_t* p, FILE* stream);
+
+/* list all tasks of a given project recursively */
+int tt_p_lsR(tt_p_t* p, FILE* stream);
+
 /** The Registry:
     Registers an array of projects and the time periods
     they have been worked on.

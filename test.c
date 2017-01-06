@@ -5,6 +5,7 @@
 void test_d(void){
   tt_d_t* d = NULL;
 
+  printf("\ntest_d:\n");
   d = tt_d_new(0,0);
   tt_d_start(d);
   tt_d_stop(d);
@@ -14,6 +15,7 @@ void test_d(void){
 void test_t1(void){
   tt_t_t* t = NULL;
 
+  printf("\ntest_t1:\n");
   t = tt_t_new("t");
   tt_t_start_run(t);
   tt_t_stop_run(t);
@@ -25,12 +27,39 @@ void test_t1(void){
 void test_p1(void){
   tt_p_t* p = NULL;
   tt_t_t* t = NULL;
+  char buf[3] = "00";
   
+  printf("\ntest_p1:\n");
   p = tt_p_new("p");
   t = tt_t_new("t");
+  tt_t_start_run(t);
   tt_p_add_task(p, t);
+  printf("\nls:\n");
+  tt_p_ls(p, stdout);
 
-   tt_p_free(p);
+  {
+    unsigned int rest = 0;
+    if(0 != (rest = sleep(5)))
+      fprintf(stderr, "sleep interrupted %ds early\n", rest);
+  }
+  
+  for(int i = 0; i < 10; i++){
+    snprintf(buf, 3, "%d", i);
+    tt_t_t* t2 = tt_t_new(buf);
+    tt_p_add_task(p,t2);
+    tt_t_start_run(t2);
+    
+    {
+      unsigned int rest = 0;
+      if(0 != (rest = sleep(5)))
+        fprintf(stderr, "sleep interrupted %ds early\n", rest);
+    }
+    tt_t_stop_run(t2);
+  }
+  /* tt_t_stop_run(t);*/
+  printf("\nlsR:\n");
+  tt_p_lsR(p, stdout);
+  tt_p_free(p);
 }
 
 
@@ -39,6 +68,7 @@ void test_db1(void){
   tt_p_t* p = NULL;
   tt_t_t* t = NULL;
 
+  printf("\ntest_db1:\n");
   db = tt_db_new();
   
   p = tt_p_new("p");
@@ -100,6 +130,11 @@ int main(){
   tt_t_stop_run(t);
   tt_t_ls(t, stdout);
 
+  tt_p_ls(p, stdout);
+
+  printf("\nlsR:\n");
+  tt_p_lsR(p, stdout);
+  
   tt_db_free(db);
 
   test_d();
