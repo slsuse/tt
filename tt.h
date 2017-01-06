@@ -1,6 +1,7 @@
 #ifndef TT_H
 #define TT_H
 #include <time.h>
+#include <stdio.h>
 
 #define TT_BUF_LEN 2
 
@@ -37,6 +38,7 @@ time_t tt_d_stop(tt_d_t* d);
 */
 typedef struct tt_task_struct{
   char* name;
+  unsigned int id; /* 0 - no id yet. */
   tt_d_t** runs; 
   unsigned nruns; /* number of registered runs  */
   unsigned len; /* current len of the array 'runs'. */
@@ -67,11 +69,17 @@ int tt_t_start_run(tt_t_t* task);
 */
 int tt_t_stop_run(tt_t_t* task);
 
+/* list the runs of a given task */
+
+int tt_t_ls(tt_t_t* t, FILE* stream);
+
+
 /** A project:
     A project has a name and a list of tasks.
  */
 typedef struct tt_project_struct{
   char* name;
+  unsigned int id; /* 0 - no id yet. */
   tt_t_t** tasklist;
   unsigned ntasks; /* number of registered tasks */
   unsigned len; /* current len of the array 'tasklist'. */

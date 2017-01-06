@@ -50,6 +50,7 @@ tt_t_t* tt_t_new( const char* name){
     free(ret);
     return NULL;
   }
+  ret->id = 0;
   ret->runs = NULL;
   ret->nruns = 0;
   ret->len = 0;
@@ -143,6 +144,40 @@ int tt_t_stop_run(tt_t_t* task){
   return  task->runs[task->nruns - 1]->finished = time(NULL);
 }
 
+/* list the runs of a given task */
+
+int tt_t_ls(tt_t_t* t, FILE* stream){
+  char buf1[26];
+  char buf2[26] = "N/A";
+  char* tmp = NULL;
+
+  if( NULL == t)
+    return -1;
+  if(NULL == stream)
+    return -2;
+  
+  if(0 == t->nruns)
+    return 0;
+
+  for( int i = 0; i < t->nruns; i++){
+    if( NULL == ctime_r(&(t->runs[i]->start), buf1))
+      return -3;
+    tmp = strchr(buf1, '\n');
+    *tmp = '\0';
+    
+    if( 0 != t->runs[i]->finished){
+      if( NULL == ctime_r(&(t->runs[i]->finished), buf2))
+        return -4;
+      tmp = strchr(buf2, '\n');
+      *tmp = '\0';
+    }
+    
+    if( 0> fprintf( stream, "%s -- %s\n", buf1, buf2))
+      return -5;
+  }
+  return t->nruns;
+}
+
 
 /* malloc a new tt_project_struct
    expect a 0-terminated string which will be copied. */
@@ -159,6 +194,7 @@ tt_p_t* tt_p_new(char* name){
     free(ret); 
    return NULL;
   }
+  ret->id = 0;
   ret->tasklist = NULL;
   ret->ntasks = 0;
   ret->len = 0;

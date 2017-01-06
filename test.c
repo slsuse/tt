@@ -17,7 +17,9 @@ void test_t1(void){
   t = tt_t_new("t");
   tt_t_start_run(t);
   tt_t_stop_run(t);
-  tt_t_free(t);
+  tt_t_ls(t, stdout);
+
+ tt_t_free(t);
 }
 
 void test_p1(void){
@@ -27,7 +29,8 @@ void test_p1(void){
   p = tt_p_new("p");
   t = tt_t_new("t");
   tt_p_add_task(p, t);
-  tt_p_free(p);
+
+   tt_p_free(p);
 }
 
 
@@ -82,7 +85,8 @@ int main(){
       fprintf(stderr, "sleep interrupted %ds early\n", rest);
   }
   tt_t_stop_run(t);
-  
+  tt_t_ls(t, stdout);
+
   
   t = tt_t_new("aufgabe2");
   tt_p_add_task(p, t);
@@ -94,6 +98,7 @@ int main(){
       fprintf(stderr, "sleep interrupted %ds early\n", rest);
   }
   tt_t_stop_run(t);
+  tt_t_ls(t, stdout);
 
   tt_db_free(db);
 
