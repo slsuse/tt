@@ -345,3 +345,41 @@ void tt_db_free(tt_db_t* d){
   free(d->projects);
   free(d);
 }
+
+/* list all projects of a given registry */
+int tt_db_ls(tt_db_t* db, FILE* stream){
+
+  if( NULL ==  db)
+    return -1;
+  if(NULL == stream)
+    return -2;
+
+   
+  if(0 == db->projects)
+    return 0;
+
+  for( int i = 0; i < db->nprojects; i++){
+    if( 0 > fprintf( stream, "%s\n", db->projects[i]->name))
+      return -3;
+  }
+  return db->nprojects;
+}
+
+/* list all projects of a given registry recursively */
+int tt_db_lsR(tt_db_t* db, FILE* stream){
+  if( NULL ==  db)
+    return -1;
+  if(NULL == stream)
+    return -2;
+
+  if(0 == db->nprojects)
+    return 0;
+
+  for( int i = 0; i < db->nprojects; i++){
+    if( 0 > fprintf( stream, "%s\n", db->projects[i]->name))
+      return -3;
+    if( 0 > tt_p_lsR(db->projects[i], stream))
+      return -4;
+  }
+  return db->nprojects;
+}

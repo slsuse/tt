@@ -67,14 +67,39 @@ void test_db1(void){
   tt_db_t* db = NULL;
   tt_p_t* p = NULL;
   tt_t_t* t = NULL;
-
+  char buf[3] = "00";
+  
   printf("\ntest_db1:\n");
   db = tt_db_new();
   
   p = tt_p_new("p");
   t = tt_t_new("t");
+  tt_t_start_run(t);
+
+  {
+    unsigned int rest = 0;
+    if(0 != (rest = sleep(5)))
+      fprintf(stderr, "sleep interrupted %ds early\n", rest);
+  }
+  
+  for(int i = 0; i < 10; i++){
+    snprintf(buf, 3, "%d", i);
+    tt_t_t* t2 = tt_t_new(buf);
+    tt_p_add_task(p,t2);
+    tt_t_start_run(t2);
+    
+    {
+      unsigned int rest = 0;
+      if(0 != (rest = sleep(5)))
+        fprintf(stderr, "sleep interrupted %ds early\n", rest);
+    }
+    tt_t_stop_run(t2);
+  }
+  
+
   tt_p_add_task(p, t);
   tt_db_add_project(db, p);
+  tt_db_lsR(db, stdout);
   
   tt_db_free(db);
 }
