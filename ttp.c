@@ -53,14 +53,18 @@ void pr_help(const char* name){
 }
 
 int main(int argc, char** argv){
+  tt_db_t* db = NULL;
+
   
   switch(args(argc, argv)){
   case help:
     pr_help(argv[0]);
     break;
   case ls:
+    tt_db_ls(db, stdout);
     break;
   case lsr:
+    tt_db_lsR(db, stdout);
     break;
   case add:
     break;
