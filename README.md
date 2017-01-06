@@ -1,17 +1,17 @@
 # tt
 
-## WARNING
-
-Do not expect any of this to compile, not even to make sense.
-It's a toy project, a side project.
-I write a couple of lines when I get bored 
-but don't have time to do something proper, for example
-when there is a couple of minutes to fill because I have to
-wait for a build but not enough time to switch to a proper task.
-
 ## Project Goals
 
-1. Fill time. 
-2. Write as easy and simple as possible.
+1. Use leftover minutes.
+2. Write the code as easy and simple as possible.
 3. Create some code to track and summarize time spent on different tasks and projects.
-4. Learn and practice git.
+4. Practice git.
+5. Parallel tasks and projects, e.g clocked in waiting for a phone call and
+   clocked in producing bugs for tt while clocked in at work.
+6. KISS principle: UNIX command line interface and plain text files (csv).
+
+## TODO
+
+1. ttfs - filesystem interface, preferably csv. Safe concurrent file access.
+2. ttcfg - configuration, environment, arguments.
+3. cli frontends - create, list, switch tasks, projects. Clock in/out tasks.
