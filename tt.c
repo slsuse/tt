@@ -67,6 +67,7 @@ void tt_t_free(tt_t_t* task){
   
   if(task->name)
     free(task->name);
+  free(task->runs);
   free(task);
 }
 
@@ -173,6 +174,7 @@ void tt_p_free(tt_p_t* p){
   free(p->name);
   for(int i = 0; i < p->ntasks; i++)
     tt_t_free(p->tasklist[i]);
+  free(p->tasklist);
   free(p);
 }
 
@@ -265,5 +267,6 @@ void tt_db_free(tt_db_t* d){
 
   for(int i = 0; i < d->nprojects; i++)
     tt_p_free(d->projects[i]);
+  free(d->projects);
   free(d);
 }

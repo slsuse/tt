@@ -58,10 +58,15 @@ int main(){
   t = tt_t_new("testaufgabe");
   d = tt_d_new( 0, 0);
 
-  tt_d_start(d);
-  tt_t_add_run(t, d);
-  tt_p_add_task(p, t);
-  tt_db_add_project(db, p);
+  if( 0 == tt_d_start(d)){
+    fprintf(stderr, "%s:%d: tt_d_start(d) failed\n", __FILE__, __LINE__);
+  }
+  if( 0 > tt_t_add_run(t, d))
+        fprintf(stderr, "%s:%d: tt_t_add_run(t,d) failed\n", __FILE__, __LINE__);
+  if( 0 > tt_p_add_task(p, t))
+        fprintf(stderr, "%s:%d: tt_p_add_task(p,t) failed\n", __FILE__, __LINE__);
+  if( 0 > tt_db_add_project(db, p))
+        fprintf(stderr, "%s:%d: tt_db_add_project(db,p) failed\n", __FILE__, __LINE__);
 
   {
     unsigned int rest = 0;
@@ -77,7 +82,8 @@ int main(){
       fprintf(stderr, "sleep interrupted %ds early\n", rest);
   }
   tt_t_stop_run(t);
-
+  
+  
   t = tt_t_new("aufgabe2");
   tt_p_add_task(p, t);
   tt_t_start_run(t);
