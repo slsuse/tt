@@ -11,7 +11,7 @@ typedef enum args{
 } args_t;
 
 args_t args(int argc, char** argv){
-  if(argc == 0)
+  if(argc == 1)
     return help;
 
   if(0 == strcmp("-h", argv[1]))
@@ -37,6 +37,8 @@ args_t args(int argc, char** argv){
   
   if(0 == strcmp("rm", argv[1]))
     return rm;
+  
+  return help;
 }
 
 void pr_help(const char* name){
@@ -64,7 +66,7 @@ int main(int argc, char** argv){
     break;
   case rm:
     break;
-  case default:
+  default:
     pr_help(argv[0]);
     break;
   }
