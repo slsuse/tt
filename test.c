@@ -69,11 +69,6 @@ int main(){
       fprintf(stderr, "sleep interrupted %ds early\n", rest);
   }
   tt_d_stop(d);
-
-  /* TODO: somewhere between here and tt_t_add_task 
-     a stupid mistake screws up the tasklist array in p. 
-     The problem seems to start in start_run, after it screws t, 
-     it seems to spread to the tasklist. */
   tt_t_start_run(t);
   
   {

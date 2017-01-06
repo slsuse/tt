@@ -90,7 +90,7 @@ int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   }
   if( task->len == task->nruns){
     newlen = 2* (task->len);
-    if(NULL == (tmp = realloc( *(task->runs), sizeof(tt_d_t*) * newlen)))
+    if(NULL == (tmp = realloc( task->runs, sizeof(tt_d_t*) * newlen)))
       return -2;
     task->runs = tmp;
     task->len = newlen;
@@ -196,7 +196,7 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task){
     return 0;
   }
   if( project->len == project->ntasks){
-    if( NULL == (tmp = realloc( *(project->tasklist),
+    if( NULL == (tmp = realloc( project->tasklist,
 				sizeof(tt_t_t*)
 				* project->len * 2))){
       return -4;
@@ -245,7 +245,7 @@ int tt_db_add_project(tt_db_t* db, tt_p_t* project){
     return 0;
   }
   if( db->len == db->nprojects){
-    if( NULL == (tmp = realloc( *(db->projects),
+    if( NULL == (tmp = realloc( db->projects,
 				sizeof(tt_db_t*) * db->len * 2))){
       return -4;
     }
