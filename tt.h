@@ -87,7 +87,7 @@ typedef struct tt_project_struct{
 
 /* malloc a new tt_project_struct
    expect a 0-terminated string which will be copied. */
-tt_p_t* tt_p_new(char* name);
+tt_p_t* tt_p_new(const char* name);
 
 /* recursively free a tt_project_struct.
  */

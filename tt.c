@@ -1,4 +1,4 @@
-#define _XOPEN_SOURCE 500 /* the hell? */
+#define _XOPEN_SOURCE 500 
 
 #include <string.h>
 #include <stdlib.h>
