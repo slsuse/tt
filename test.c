@@ -79,6 +79,99 @@ void test_db1(void){
   tt_db_free(db);
 }
 
+tt_p_t* db_find_project( tt_db_t* db, const char* pname){
+  tt_p_t* p = NULL;
+  for( int i = 0; i < db->nprojects; i++){
+    p = db->projects[i];
+    if( 0 == strcmp( p->name, pname)){
+      return p;
+    }
+  }
+  return p;
+}
+
+tt_t_t* project_find_task( tt_p_t* p, const char* tname){
+  tt_t_t* t = NULL;
+  for( int i = 0; i < p->ntasks; i++){
+    t = p->tasklist[i];
+    if( 0 == strcmp( t->name, tname)){
+      return t;
+    }
+  }
+  return t;
+}
+
+tt_t_t* db_find_task( tt_db_t* db, const char* pname, const char* tname){
+  tt_p_t* p = NULL;
+
+  if( NULL != (p = db_find_project(db, pname))){
+    return project_find_task(p, tname);
+  }
+  return NULL;
+}
+
+
+/* stuff that might turn into code someday.
+   looks like I'll need a full CRUD interface after all.
+*/
+int db_add_run( tt_db_t* db, unsigned int pid, unsigned int tid, tt_d_t* run){
+  tt_p_t* p = NULL;
+  tt_t_t* t = NULL;
+
+  for( int i = 0; i < db->nprojects; i++){
+    if( db->projects[i]->id == pid){
+      p = db->projects[i];
+      for( int j = 0; j < p->ntasks; j++){
+
+	if( p->tasklist[i]->id == tid){
+	  t = p->tasklist[i];
+	  tt_t_add_run(t, run);
+	  return 0;
+	}
+	/*TODO:
+	  create new task and project? Without names? Really?
+	*/
+	else{
+	  return -1; /* not found */
+	}
+      }
+    }
+    else{
+      return -2; /* not found */
+    }
+  }
+  /* the fuck? */
+  return -3;
+}
+
+void test_db2(void){
+  tt_db_t* db = NULL;
+  tt_db_t* res = NULL;
+  tt_t_t* t = NULL;
+  tt_p_t* p = NULL;
+  tt_d_t* run = NULL;
+
+  printf("\ntest_db2:\n");
+  db = tt_db_new();
+  p = tt_p_new("projectX");
+  tt_p_setid(p, 1);
+  
+  t = tt_t_new("taskX");
+  tt_t_setid(t, 1);
+
+  run = tt_d_new( 0, 0);
+
+  tt_d_start(run);
+  sleep(5);
+  tt_d_stop(run);
+
+  tt_db_add_project(db, p);
+  tt_p_add_task(p, t);
+  /*tt_t_add_run(t, run);*/
+
+  /*res = db_find(db, pname, tname);*/
+  db_add_run(db, 1, 1, run);
+}
 
 int main(){
   tt_db_t* db = NULL;

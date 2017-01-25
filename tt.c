@@ -72,6 +72,20 @@ void tt_t_free(tt_t_t* task){
   free(task);
 }
 
+unsigned int tt_t_setid( tt_t_t* t, unsigned int id){
+  if(NULL == t)
+    return 0;
+  t->id = id;
+  return id;
+}
+
+
+unsigned int tt_t_getid( tt_t_t* t){
+  if(NULL == t)
+    return 0;
+ return t->id;
+}
+
 /* add a duration to a task
    return index of duration or below 0 on error
 */
@@ -214,6 +228,22 @@ void tt_p_free(tt_p_t* p){
   free(p);
 }
 
+
+unsigned int tt_p_setid( tt_p_t* p, unsigned int id){
+  if(NULL == p)
+    return 0;
+  p->id = id;
+  return id;
+}
+
+
+unsigned int tt_p_getid( tt_p_t* p){
+  if(NULL == p)
+    return 0;
+ return p->id;
+}
+
+
 /* add a task to a project 
    return index of task or below 0 on error
 */
@@ -246,6 +276,40 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task){
   ret = (project->ntasks)++;
   return ret;
 }
+
+tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname){
+  tt_t_t* t = NULL;
+  for( int i = 0; i < p->ntasks; i++){
+    t = p->tasklist[i];
+    if( 0 == strcmp( t->name, tname)){
+      return t;
+    }
+  }
+  return t;
+}
+
+tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname){
+  tt_p_t* p = NULL;
+  for( int i = 0; i < db->nprojects; i++){
+    p = db->projects[i];
+    if( 0 == strcmp( p->name, pname)){
+      return p;
+    }
+  }
+  return p;
+}
+
+tt_t_t* tt_db_find_task(tt_db_t* db,
+			const char* pname,
+			const char* tname){
+  tt_p_t* p = NULL;
+
+  if( NULL != (p = tt_db_find_project(db, pname))){
+    return tt_p_find_task(p, tname);
+  }
+  return NULL;
+}
+
 
 /* list all tasks of a given project */
 int tt_p_ls(tt_p_t* p, FILE* stream){

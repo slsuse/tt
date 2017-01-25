@@ -11,7 +11,12 @@
 
 
 /* Codehalde:
-   read and parse file */
+   read and parse file 
+   WARNING:
+   This is ugly as hell, it's written in leftover minutes 
+   without much foxus
+   and currently contains unsanitized ideas.
+*/
 tt_db_t* tt_db_read_file( const char* file_name){
   tt_db_t* ret = NULL;
   char* buf = NULL;
@@ -44,9 +49,13 @@ tt_db_t* tt_db_read_file( const char* file_name){
   
   /* TODO:
      parse and fill 
+     for heaven's sake, clean this up, Stephan.
   */
   
-  { /* read in buf */
+  { /* TODO:
+        - read in buf 
+	- reallocing buf if necessary
+    */
     int pos = 0;
     int max = bl-1;
     
@@ -68,7 +77,11 @@ tt_db_t* tt_db_read_file( const char* file_name){
   /* TODO:
      Get rid of this ugly code repepepepepepepepepetitition.
   */
-  { /* parse buf */
+  { /* parse buf 
+     TODO:
+     - parse more then one line.
+     - break down into simple small functions.
+    */
     char* start = buf;
     char* end = NULL;
     int pid = 0;
@@ -160,6 +173,33 @@ tt_db_t* tt_db_read_file( const char* file_name){
     /* TODO:
        allocate and fill the tt_db_struct.
     */
+    {
+      tt_t_t* tmptsk = NULL;
+      tt_p_t* tmppr = NULL;
+      
+      tmptsk = tt_db_find_task(ret, pname, tname);
+      if(NULL == tmptsk){
+	tmptsk = tt_t_new(tname);
+	tt_t_setid(tmptsk, tid);
+
+	if( NULL == (tmppr = tt_db_find_project(db, pname))){
+	  tmppr = tt_p_new(pname);
+	  tt_p_setid(tmppr, pid);
+	}
+	
+	tt_p_add_task(tmppr, tmptsk);	
+      }
+
+      tt_db_add_project(db, tmppr);
+      { /* TODO:
+	   sanitize here, i.e. 
+	   check for identical start-stop pairs?
+	*/
+	tt_d_t* tmpd = NULL;
+	tmpd = tt_d_new(dstart, dstop);
+	tt_t_add_run(tmptsk, tmpd);
+      }
+    }
     
   } /* end parse buffer */
   /* TODO:

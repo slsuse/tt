@@ -52,6 +52,9 @@ tt_t_t* tt_t_new( const char* name);
  */
 void tt_t_free(tt_t_t* task);
 
+unsigned int tt_t_setid( tt_t_t* t, unsigned int id);
+unsigned int tt_t_getid( tt_t_t* t);
+
 /* add a duration to a task
    return index of duration or below 0 on error
 */
@@ -93,10 +96,19 @@ tt_p_t* tt_p_new(const char* name);
  */
 void tt_p_free(tt_p_t* p);
 
+unsigned int tt_p_setid( tt_p_t* p, unsigned int id);
+unsigned int tt_p_getid( tt_p_t* p);
+
 /* add a task to a project 
    return index of task or below 0 on error
 */
 int tt_p_add_task(tt_p_t* project, tt_t_t* task);
+
+tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname);
+
+tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname);
+
+tt_t_t* tt_db_find_task(tt_db_t* db, const char* pname, const char* tname);
 
 /* list all tasks of a given project */
 int tt_p_ls(tt_p_t* p, FILE* stream);
