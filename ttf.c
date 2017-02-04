@@ -47,8 +47,38 @@ int readfilebuf(char** buf, int bl, int fd) {
   return l;
 }
 
+/* TODO:
+       
+   loop:
+       src++, dst++
+       if src == esc then
+          src++
+          cp src dst
+       end if
+*/
+
+char* tt_strchar(char* buf, char delim){
+  char esc = '\\';
+  char *tmp = buf;
+  
+  do{
+    switch( *tmp){
+    case esc:
+      ++tmp;
+      break;
+    case delim:
+      return tmp;
+      break;
+    default:
+      break;
+    }
+  } while(++tmp);
+    
+  return NULL;
+}
+
 int parse_id(struct chunk* sc, char delim){
-  sc->end = strchr(sc->start, delim); 
+  sc->end = tt_strchr(sc->start, delim); 
   if( NULL == sc->end){
     fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
     //free(buf);
@@ -60,7 +90,7 @@ int parse_id(struct chunk* sc, char delim){
 }
 
 char* parse_name(struct chunk* sc, char delim){  
-  sc->end = strchr( sc->start, delim);
+  sc->end =  tt_strchr( sc->start, delim);
   if( NULL == sc->end){
     fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
     return NULL;
@@ -71,7 +101,7 @@ char* parse_name(struct chunk* sc, char delim){
 
 time_t parse_time(struct chunk* sc, char delim){
   struct tm stm;
-  sc->end = strchr( sc->start, delim);
+  sc->end =  tt_strchr( sc->start, delim);
   if( NULL == sc->end){
     fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
     return 0;
@@ -80,16 +110,8 @@ time_t parse_time(struct chunk* sc, char delim){
   strptime( sc->start, tt_time_format, &stm);
   return tt_timegm(&stm);
 }
-
+  
 int parse_line(char* buf, tt_db_t* db, struct chunk* sc){  
-  /* TODO:
-     Get rid of this ugly code repepepepepepepepepetitition.
-  */
-  /* parse buf 
-     TODO:
-     - parse more then one line.
-     - break down into simple small functions.
-  */
   int pid = 0;
   int tid = 0;
   char* pname = NULL;
@@ -129,13 +151,10 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     return -6;
   }
    
-  /* TODO:
-     allocate and fill the tt_db_struct.
-  */
   {
     tt_t_t* tmptsk = NULL;
     tt_p_t* tmppr = NULL;
-      
+    
     tmptsk = tt_db_find_task(db, pname, tname);
     if(NULL == tmptsk){
       tmptsk = tt_t_new(tname);

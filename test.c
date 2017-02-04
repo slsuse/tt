@@ -173,6 +173,26 @@ void test_db2(void){
   db_add_run(db, 1, 1, run);
 }
 
+/* TODO:
+   compress buf inplace, discarding esc characters. 
+*/
+int unesc(char* buf){
+  char* dst = buf;
+  
+  do{
+    switch(*buf){
+    case '\\':
+      break;
+    case ',':
+      break;
+    default:
+      break;
+    }
+  }while(*(++buf));
+
+  
+}
+
 int main(){
   tt_db_t* db = NULL;
   tt_p_t* p = NULL;

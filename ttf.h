@@ -14,10 +14,8 @@
 const char tt_time_format = "%Y-%m-%d %H:%M:%S";
 
 /* little helper
-   TODO:
    - read in buf 
-   - reallocing buf if
-   - necessary
+   - reallocing buf if necessary
 */
 char* readfilebuf(char** oldbuf, int bl, int fd);
 
@@ -35,3 +33,5 @@ time_t parse_time(struct chunk *sc, char delim);
 int parse_line(char* buf, tt_db_t* db, struct chunk* sc);
 /* read and parse */
 tt_db_t* tt_db_read_file( const char* file_name);
+time_t tt_timegm(struct tm *tm);
+int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk);
