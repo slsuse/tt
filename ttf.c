@@ -17,6 +17,163 @@
    without much foxus
    and currently contains unsanitized ideas.
 */
+
+
+char* bufline(char* oldbuf, int bl, int fd) { /* TODO:
+                                                 - read in buf 
+                                                 - reallocing buf if necessary
+                                              */
+  int pos = 0;
+  int max = bl-1;
+  int nread = -1;
+  do{
+    nread = read(fd, buf+pos, max);
+    if( 0>nread){
+      perror("read");
+      
+      return NULL;
+    }
+      
+    buf[nread] = (char) 0x0;
+    pos += nread;
+    max -= nread;
+  }while(nread > 0);
+  return buf;
+}
+
+int parse_id(struct chunk* sc){
+  int pid = 0;
+  sc->end = strchr(sc->start, sc->stopsign); 
+  if( NULL == sc->end){
+    fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
+    //free(buf);
+    //tt_db_free(ret);
+    return -1;
+  }
+  *(sc->end) = (char) 0x0;
+  pid = atoi(sc->start);
+  sc->start = ++(sc->end);
+  return pid;
+}
+
+char* parse_name(struct chunk sc){  
+  char* name = NULL;
+  sc->end = strchr( sc->start, sc->stopsign);
+  if( NULL == sc->end){
+    fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
+    return NULL;
+  }
+  *(sc->end) = (char) 0x0;
+  name = start;
+  sc->start = ++(sc->end);
+  return name;
+}
+
+time_t parse_time(struct chunk sc){
+  time_t ret = 0;
+  sc->end = strchr( sc->start, sc->stopsign);
+  if( NULL == sc->end){
+    fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
+    return 0;
+  }
+  *(sc->end) = (char) 0x0;
+  {
+    struct tm stm;
+    strptime( sc->start, tt_time_format, &stm);
+    ret = tt_timegm(&stm);
+  }
+  sc->start = ++(sc->end);
+  return ret;
+}
+
+int parse_line(char* buf, tt_db_t* db){  
+  /* TODO:
+     Get rid of this ugly code repepepepepepepepepetitition.
+  */
+  /* parse buf 
+     TODO:
+     - parse more then one line.
+     - break down into simple small functions.
+  */
+  int pid = 0;
+  int tid = 0;
+  char* pname = NULL;
+  char* tname = NULL;
+  time_t dstart = 0;
+  time_t dstop  = 0;
+  struct chunk sc;
+
+  sc.start = buf;
+  sc.end = NULL;
+  sc.stopsign = ',';
+
+  /* project id */
+  if( 0> (pid = parse_id(&sc))){
+    return -1;
+  }
+      
+  /* project name */
+  if(NULL == (pname = parse_name(&sc))){
+    return -2;
+  }
+      
+  /* task id */
+  if( 0> (tid = parse_id(&sc))){
+    return -3;
+  }
+  
+  /* task name */
+  if(NULL == (tname = parse_name(&sc))){
+    return -4;
+  }
+   
+  /* duration start */
+  if(0 == (dstart = parse_time(&sc))){
+    return -5;
+  }
+      
+  /* duration end */
+  sc.stopsign = '\n';
+  if(0 == (dstop = parse_time(&sc))){
+    return -6;
+  }
+   
+  /* TODO:
+     allocate and fill the tt_db_struct.
+  */
+  {
+    tt_t_t* tmptsk = NULL;
+    tt_p_t* tmppr = NULL;
+      
+    tmptsk = tt_db_find_task(db, pname, tname);
+    if(NULL == tmptsk){
+      tmptsk = tt_t_new(tname);
+      tt_t_setid(tmptsk, tid);
+
+      if( NULL == (tmppr = tt_db_find_project(db, pname))){
+        tmppr = tt_p_new(pname);
+        tt_p_setid(tmppr, pid);
+      }
+	
+      tt_p_add_task(tmppr, tmptsk);	
+    }
+
+    tt_db_add_project(db, tmppr);
+    { /* TODO:
+         sanitize here, i.e. 
+         check for identical start-stop pairs?
+      */
+      tt_d_t* tmpd = NULL;
+      tmpd = tt_d_new(dstart, dstop);
+      tt_t_add_run(tmptsk, tmpd);
+    }
+  }
+    
+  return 0;
+}
+
+
+
 tt_db_t* tt_db_read_file( const char* file_name){
   tt_db_t* ret = NULL;
   char* buf = NULL;
@@ -51,155 +208,18 @@ tt_db_t* tt_db_read_file( const char* file_name){
      parse and fill 
      for heaven's sake, clean this up, Stephan.
   */
-  
-  { /* TODO:
-        - read in buf 
-	- reallocing buf if necessary
-    */
-    int pos = 0;
-    int max = bl-1;
-    
-    do{
-      nread = read(fd, buf+pos, max);
-      if( 0>nread){
-	perror("read");
-	free(buf);
-	tt_db_free(ret);
-	return NULL;
-      }
-      
-      buf[nread] = (char) 0x0;
-      pos += nread;
-      max -= nread;
-    }while(nread > 0);
-    
+  {
+    char* b = buf;
+    if( NULL == (b = bufline(buf, bl, fd))){
+      free(buf);
+      tt_db_free(ret);
+    }
   }
-  /* TODO:
-     Get rid of this ugly code repepepepepepepepepetitition.
-  */
-  { /* parse buf 
-     TODO:
-     - parse more then one line.
-     - break down into simple small functions.
-    */
-    char* start = buf;
-    char* end = NULL;
-    int pid = 0;
-    int tid = 0;
-    char* pname = NULL;
-    char* tname = NULL;
-    time_t dstart = 0;
-    time_t dstop  = 0;
-
-    /* project id */
-    end = strchr(start, ','); 
-    if( NULL == end){
-      fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
-      free(buf);
-      tt_db_free(ret);
-      return NULL;
-    }
-    *end = (char) 0x0;
-    pid = atoi(start);
-    start = ++end;
-    
-    /* project name */
-    end = strchr( start, ',');
-    if( NULL == end){
-      fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
-      free(buf);
-      tt_db_free(ret);
-      return NULL;
-    }
-    *end = (char) 0x0;
-    pname = start;
-    start = ++end;
-
-    /* task id */
-    end = strchr(start, ',');
-    if( NULL == end){
-      fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
-      free(buf);
-      tt_db_free(ret);
-      return NULL;
-    }
-    *end = (char) 0x0;
-    tid = atoi(start);
-    start = ++end;
-
-     /* task name */
-    end = strchr( start, ',');
-    if( NULL == end){
-      fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
-      free(buf);
-      tt_db_free(ret);
-      return NULL;
-    }
-    *end = (char) 0x0;
-    tname = start;
-    start = ++end;
-    
-    /* duration start */
-    end = strchr( start, ',');
-    if( NULL == end){
-      fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
-      free(buf);
-      tt_db_free(ret);
-      return NULL;
-    }
-    *end = (char) 0x0;
-    {
-      struct tm stm;
-      strptime( start, tt_time_format, &stm);
-      dstart = tt_timegm(&stm);
-    }
-    start = ++end;
-    
-    /* duration end */
-    end = strchr( start, '\n');
-    if( NULL == end){
-      fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
-      free(buf);
-      tt_db_free(ret);
-      return NULL;
-    }
-    *end = (char) 0x0;
-    {
-      struct tm stm;
-      strptime( start, tt_time_format, &stm);
-      dstop = tt_timegm(&stm);
-    }
-
-    /* TODO:
-       allocate and fill the tt_db_struct.
-    */
-    {
-      tt_t_t* tmptsk = NULL;
-      tt_p_t* tmppr = NULL;
-      
-      tmptsk = tt_db_find_task(ret, pname, tname);
-      if(NULL == tmptsk){
-	tmptsk = tt_t_new(tname);
-	tt_t_setid(tmptsk, tid);
-
-	if( NULL == (tmppr = tt_db_find_project(db, pname))){
-	  tmppr = tt_p_new(pname);
-	  tt_p_setid(tmppr, pid);
-	}
-	
-	tt_p_add_task(tmppr, tmptsk);	
-      }
-
-      tt_db_add_project(db, tmppr);
-      { /* TODO:
-	   sanitize here, i.e. 
-	   check for identical start-stop pairs?
-	*/
-	tt_d_t* tmpd = NULL;
-	tmpd = tt_d_new(dstart, dstop);
-	tt_t_add_run(tmptsk, tmpd);
-      }
-    }
+          
+  if( 0> parse_line(buf, ret)){
+    free(buf);
+    tt_db_free(ret);
+  }
     
   } /* end parse buffer */
   /* TODO:

@@ -12,3 +12,25 @@
 */
 
 const char tt_time_format = "%Y-%m-%d %H:%M:%S";
+
+/* little helper
+   TODO:
+   - read in buf 
+   - reallocing buf if
+   - necessary
+*/
+char* bufline(char* oldbuf, int bl, int fd);
+
+struct chunk{
+  char* start;
+  char* end;
+  char stopsign;
+};
+
+int parse_id(struct chunk);
+char* parse_name(struct chunk);
+time_t parse_time(struct chunk);
+
+int parse_line(char* buf, tt_db_t* db);
+/* read and parse */
+tt_db_t* tt_db_read_file( const char* file_name);
