@@ -19,18 +19,19 @@ const char tt_time_format = "%Y-%m-%d %H:%M:%S";
    - reallocing buf if
    - necessary
 */
-char* bufline(char* oldbuf, int bl, int fd);
+char* readfilebuf(char** oldbuf, int bl, int fd);
 
 struct chunk{
   char* start;
   char* end;
-  char stopsign;
+  char coldelim;
+  char rowdelim;
 };
 
-int parse_id(struct chunk);
-char* parse_name(struct chunk);
-time_t parse_time(struct chunk);
+int parse_id(struct chunk *sc, char delim);
+char* parse_name(struct chunk *sc, char delim);
+time_t parse_time(struct chunk *sc, char delim);
 
-int parse_line(char* buf, tt_db_t* db);
+int parse_line(char* buf, tt_db_t* db, struct chunk* sc);
 /* read and parse */
 tt_db_t* tt_db_read_file( const char* file_name);

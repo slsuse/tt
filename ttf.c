@@ -18,32 +18,37 @@
    and currently contains unsanitized ideas.
 */
 
-
-char* bufline(char* oldbuf, int bl, int fd) { /* TODO:
-                                                 - read in buf 
-                                                 - reallocing buf if necessary
-                                              */
+/* return < 0 on error or new length of buf */
+int readfilebuf(char** buf, int bl, int fd) {
   int pos = 0;
-  int max = bl-1;
+  int l = bl;
+  int max = l-1;
   int nread = -1;
-  do{
-    nread = read(fd, buf+pos, max);
-    if( 0>nread){
-      perror("read");
-      
-      return NULL;
-    }
-      
-    buf[nread] = (char) 0x0;
+  char* b = *buf;
+  errno = 0;
+  while(0 < (nread = read(fd, b+pos, max))){
     pos += nread;
-    max -= nread;
-  }while(nread > 0);
-  return buf;
+    /* make sure nread == 0 means EOF */
+    if(0 == (max -= nread)){
+      l *=2;
+      if(NULL == (b = realloc( b, sizeof(char) * l ))){
+	perror("read");
+	return -1;
+      }
+      *buf = b;
+      max = l-1;
+    }
+    b[pos] = (char) 0x0;
+  }
+  if(0>nread){
+    perror("read");
+    return -2;
+  }
+  return l;
 }
 
-int parse_id(struct chunk* sc){
-  int pid = 0;
-  sc->end = strchr(sc->start, sc->stopsign); 
+int parse_id(struct chunk* sc, char delim){
+  sc->end = strchr(sc->start, delim); 
   if( NULL == sc->end){
     fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
     //free(buf);
@@ -51,42 +56,32 @@ int parse_id(struct chunk* sc){
     return -1;
   }
   *(sc->end) = (char) 0x0;
-  pid = atoi(sc->start);
-  sc->start = ++(sc->end);
-  return pid;
+  return atoi(sc->start);
 }
 
-char* parse_name(struct chunk sc){  
-  char* name = NULL;
-  sc->end = strchr( sc->start, sc->stopsign);
+char* parse_name(struct chunk* sc, char delim){  
+  sc->end = strchr( sc->start, delim);
   if( NULL == sc->end){
     fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
     return NULL;
   }
   *(sc->end) = (char) 0x0;
-  name = start;
-  sc->start = ++(sc->end);
-  return name;
+  return start;
 }
 
-time_t parse_time(struct chunk sc){
-  time_t ret = 0;
-  sc->end = strchr( sc->start, sc->stopsign);
+time_t parse_time(struct chunk* sc, char delim){
+  struct tm stm;
+  sc->end = strchr( sc->start, delim);
   if( NULL == sc->end){
     fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
     return 0;
   }
   *(sc->end) = (char) 0x0;
-  {
-    struct tm stm;
-    strptime( sc->start, tt_time_format, &stm);
-    ret = tt_timegm(&stm);
-  }
-  sc->start = ++(sc->end);
-  return ret;
+  strptime( sc->start, tt_time_format, &stm);
+  return tt_timegm(&stm);
 }
 
-int parse_line(char* buf, tt_db_t* db){  
+int parse_line(char* buf, tt_db_t* db, struct chunk* sc){  
   /* TODO:
      Get rid of this ugly code repepepepepepepepepetitition.
   */
@@ -101,40 +96,36 @@ int parse_line(char* buf, tt_db_t* db){
   char* tname = NULL;
   time_t dstart = 0;
   time_t dstop  = 0;
-  struct chunk sc;
-
-  sc.start = buf;
-  sc.end = NULL;
-  sc.stopsign = ',';
 
   /* project id */
-  if( 0> (pid = parse_id(&sc))){
+  if( 0> (pid = parse_id(sc, sc->coldelim))){
     return -1;
   }
-      
+  sc->start = ++(sc->end);
+   
   /* project name */
-  if(NULL == (pname = parse_name(&sc))){
+  if(NULL == (pname = parse_name(sc, sc->coldelim))){
     return -2;
   }
-      
+  sc->start = ++(sc->end);
+  
   /* task id */
-  if( 0> (tid = parse_id(&sc))){
+  if( 0> (tid = parse_id(sc, sc->coldelim))){
     return -3;
   }
-  
+  sc->start = ++(sc->end);
   /* task name */
-  if(NULL == (tname = parse_name(&sc))){
+  if(NULL == (tname = parse_name(sc, sc->coldelim))){
     return -4;
   }
-   
+  sc->start = ++(sc->end);
   /* duration start */
-  if(0 == (dstart = parse_time(&sc))){
+  if(0 == (dstart = parse_time(sc, sc->coldelim))){
     return -5;
   }
-      
+  sc->start = ++(sc->end);
   /* duration end */
-  sc.stopsign = '\n';
-  if(0 == (dstop = parse_time(&sc))){
+  if(0 == (dstop = parse_time(sc, sc->rowdelim))){
     return -6;
   }
    
@@ -168,7 +159,7 @@ int parse_line(char* buf, tt_db_t* db){
       tt_t_add_run(tmptsk, tmpd);
     }
   }
-    
+  
   return 0;
 }
 
@@ -176,15 +167,8 @@ int parse_line(char* buf, tt_db_t* db){
 
 tt_db_t* tt_db_read_file( const char* file_name){
   tt_db_t* ret = NULL;
-  char* buf = NULL;
-  int bl = 128;
   int fd = -1;
   errno = 0;
-
-  if( NULL == (buf = malloc(sizeof(char)*bl))){
-    perror("malloc"); //?
-    return NULL;
-  }
   
   /* open and lock */
   if( 0 > (fd = open( file_name, O_RDONLY))){
@@ -206,25 +190,44 @@ tt_db_t* tt_db_read_file( const char* file_name){
   
   /* TODO:
      parse and fill 
-     for heaven's sake, clean this up, Stephan.
   */
   {
-    char* b = buf;
-    if( NULL == (b = bufline(buf, bl, fd))){
+    char* buf = NULL;
+    int bl = 128;
+    int l = 0;
+    struct chunk sc;
+
+    if( NULL == (buf = malloc(sizeof(char)*bl))){
+      perror("malloc"); //?
+      return NULL;
+    }
+    
+    if( 0 > (l = readfilebuf(&buf, bl, fd))){
       free(buf);
       tt_db_free(ret);
     }
-  }
-          
-  if( 0> parse_line(buf, ret)){
+    
+    sc.start = buf;
+    sc.end = buf;
+    sc.coldelim = ',';
+    sc.rowdelim = '\n';
+
+    while(l > (sc.end - buf)){
+      if( 0> parse_line(buf, ret, &sc)){
+	free(buf);
+	tt_db_free(ret);
+	return NULL;
+      }
+    }
+  }  
+  /* close should unlock  */
+  if(0 != close(fd)){
+    perror("close");
     free(buf);
     tt_db_free(ret);
+    return NULL;
   }
-    
-  } /* end parse buffer */
-  /* TODO:
-     close and unlock 
-  */
+  return ret;
 }
 
 /* see man timegm on Opensuse Leap 42.2 */
@@ -250,8 +253,8 @@ time_t tt_timegm(struct tm *tm)
 }
 
 /* TODO: 
-    - error checking 
-    - escaping ','
+   - error checking 
+   - escaping ','
 */
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   
@@ -271,10 +274,10 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
     write(fd, buf, 20);
     write(fd, ",", "1")
        
-    strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
+      strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
     write(fd, buf, 20);
     write(fd, ",", "1")
-  }
+      }
 }
 
 int tt_t_tocsv( tt_t_t* t, int fd, tt_p_t* curpr){
@@ -292,9 +295,9 @@ int tt_p_tocsv( tt_p_t* p, int fd){
 
 int tt_db_update( tt_db_t* db, int fd){
   /* TODO:
-      - read buf
-      - strchr '\n'
-      - strtok ','
+     - read buf
+     - strchr '\n'
+     - strtok ','
   */
   const int len = 128;
   char buf[128];
@@ -325,8 +328,8 @@ int tt_write_file( tt_db_t* t, int fd){
     return NULL;
   }
   if( 0 > (flock( fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
-      perror("tt_db_write_file");
-      return NULL;
+    perror("tt_db_write_file");
+    return NULL;
   }
 
   
