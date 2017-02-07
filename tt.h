@@ -1,7 +1,9 @@
 #ifndef TT_H
 #define TT_H
+
 #include <time.h>
 #include <stdio.h>
+#include <string.h>
 
 #define TT_BUF_LEN 2
 
@@ -12,6 +14,46 @@ typedef struct tt_duration_struct{
   time_t start;
   time_t finished;
 } tt_d_t;
+
+
+
+/** A task model:
+    A task has a name and is worked on through 
+    different periods of time.
+*/
+typedef struct tt_task_struct{
+  char* name;
+  unsigned int id; /* 0 - no id yet. */
+  tt_d_t** runs; 
+  unsigned nruns; /* number of registered runs  */
+  unsigned len; /* current len of the array 'runs'. */
+} tt_t_t;
+
+
+
+
+/** A project:
+    A project has a name and a list of tasks.
+ */
+typedef struct tt_project_struct{
+  char* name;
+  unsigned int id; /* 0 - no id yet. */
+  tt_t_t** tasklist;
+  unsigned ntasks; /* number of registered tasks */
+  unsigned len; /* current len of the array 'tasklist'. */
+} tt_p_t;
+
+
+/** The Registry:
+    Registers an array of projects and the time periods
+    they have been worked on.
+*/
+typedef struct tt_db_struct{
+  tt_p_t** projects; /* an array of projects*/
+  unsigned nprojects; /* The number of registered projects, index of NULL terminator */
+  unsigned len; /* current len of the array 'projects'. */
+} tt_db_t;
+
 
 /* malloc a tt_duration_struct:
    start, finished default to 0 */
@@ -30,19 +72,6 @@ time_t tt_d_start(tt_d_t* d);
    return 0 on error or stop time else.
 */
 time_t tt_d_stop(tt_d_t* d);
-
-
-/** A task model:
-    A task has a name and is worked on through 
-    different periods of time.
-*/
-typedef struct tt_task_struct{
-  char* name;
-  unsigned int id; /* 0 - no id yet. */
-  tt_d_t** runs; 
-  unsigned nruns; /* number of registered runs  */
-  unsigned len; /* current len of the array 'runs'. */
-} tt_t_t;
 
 /* malloc a new tt_task_struct
    expect a 0-terminated string which will be copied. */
@@ -76,18 +105,6 @@ int tt_t_stop_run(tt_t_t* task);
 
 int tt_t_ls(tt_t_t* t, FILE* stream);
 
-
-/** A project:
-    A project has a name and a list of tasks.
- */
-typedef struct tt_project_struct{
-  char* name;
-  unsigned int id; /* 0 - no id yet. */
-  tt_t_t** tasklist;
-  unsigned ntasks; /* number of registered tasks */
-  unsigned len; /* current len of the array 'tasklist'. */
-} tt_p_t;
-
 /* malloc a new tt_project_struct
    expect a 0-terminated string which will be copied. */
 tt_p_t* tt_p_new(const char* name);
@@ -116,16 +133,6 @@ int tt_p_ls(tt_p_t* p, FILE* stream);
 /* list all tasks of a given project recursively */
 int tt_p_lsR(tt_p_t* p, FILE* stream);
 
-/** The Registry:
-    Registers an array of projects and the time periods
-    they have been worked on.
-*/
-typedef struct tt_db_struct{
-  tt_p_t** projects; /* an array of projects*/
-  unsigned nprojects; /* The number of registered projects, index of NULL terminator */
-  unsigned len; /* current len of the array 'projects'. */
-} tt_db_t;
-
 /* malloc a tt_db_struct.
    return NULL on error.
  */
@@ -133,7 +140,7 @@ tt_db_t* tt_db_new();
 
 /* recursively free a tt_db_struct.
  */
-void tt_db_free(tt_db_t* p);
+void tt_db_free(tt_db_t* d);
 
 /* add a project 
    return index of project or below 0 on error

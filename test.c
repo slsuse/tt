@@ -1,6 +1,44 @@
-#include "tt.h"
+#define POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 500
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "tt.h"
+#include "ttf.h"
+
+void test_strdelim(const char* str){
+  char* s = NULL;
+  char* start = NULL;
+  char* end = NULL;
+  int done = 0;
+  int cnt = 0;
+
+  s = strdup(str);
+  start = s;
+
+  while(!done){
+    end = tt_strdelim(start, &cnt, ',',  '\\');
+    if(*end == '\0'){
+      printf("%s:%d - |%d.) %s|\n", __FILE__, __LINE__, cnt, start);
+      done = 1;
+    }
+    else{
+      *end = '\0';
+      printf("%s:%d - |%d.) %s|\n", __FILE__, __LINE__, cnt, start);
+
+      if(cnt >0)
+        if( '\0' == end[cnt]) /*check for end of buffer, avoid offbyone */
+          done = 1;
+
+      start = end+cnt; /* original delim position */
+      ++start;
+    }      
+    
+    
+  }
+}
+
 
 void test_d(void){
   tt_d_t* d = NULL;
@@ -146,7 +184,7 @@ int db_add_run( tt_db_t* db, unsigned int pid, unsigned int tid, tt_d_t* run){
 
 void test_db2(void){
   tt_db_t* db = NULL;
-  tt_db_t* res = NULL;
+  /*  tt_db_t* res = NULL;*/
   tt_t_t* t = NULL;
   tt_p_t* p = NULL;
   tt_d_t* run = NULL;
@@ -173,28 +211,8 @@ void test_db2(void){
   db_add_run(db, 1, 1, run);
 }
 
-/* TODO:
-   compress buf inplace, discarding esc characters. 
-*/
-int unesc(char* buf){
-  char* dst = buf;
-  
-  do{
-    switch(*buf){
-    case '\\':
-      break;
-    case ',':
-      break;
-    default:
-      break;
-    }
-  }while(*(++buf));
-
-  
-}
-
 int main(){
-  tt_db_t* db = NULL;
+  /* tt_db_t* db = NULL;
   tt_p_t* p = NULL;
   tt_t_t* t = NULL;
   tt_d_t* d = NULL;
@@ -254,6 +272,16 @@ int main(){
   test_t1();
   test_p1();
   test_db1();
-  
+  */
+  {
+    const char* s = "a,b,cde,f,g,hijkl,m,n";
+    printf("%s:%d %s\n", __FILE__, __LINE__, s);
+    test_strdelim(s);
+  }
+  {
+    const char* s = "a\\,b\\,cde,f,g,hijkl,m\\,n";
+    printf("%s:%d %s\n", __FILE__, __LINE__, s);
+    test_strdelim(s);
+  }
   return 0;
 }

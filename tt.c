@@ -195,7 +195,7 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
 
 /* malloc a new tt_project_struct
    expect a 0-terminated string which will be copied. */
-tt_p_t* tt_p_new(char* name){
+tt_p_t* tt_p_new(const char* name){
   tt_p_t* ret = NULL;
   
   if(NULL == name)
@@ -354,7 +354,7 @@ int tt_p_lsR(tt_p_t* p, FILE* stream){
 /* malloc a tt_db_struct.
    return NULL on error.
  */
-tt_db_t* tt_db_new(){
+tt_db_t* tt_db_new(void){
   tt_db_t* ret = NULL;
   
   if( NULL == (ret = malloc( sizeof(tt_db_t))))

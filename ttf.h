@@ -1,3 +1,6 @@
+#ifndef TTF_H
+#define TTF_H
+
 /* according to man 3 strptime on OpenSuse Leap 42.2:
    %Y     The year, including century (for example, 1991).
    %m     The month number (1-12).
@@ -11,13 +14,13 @@
 "%Y-%m-%d %H:%M:%S" =>   "2001-11-12 18:31:01"
 */
 
-const char tt_time_format = "%Y-%m-%d %H:%M:%S";
+static const char* tt_time_format = "%Y-%m-%d %H:%M:%S";
 
 /* little helper
    - read in buf 
    - reallocing buf if necessary
 */
-char* readfilebuf(char** oldbuf, int bl, int fd);
+int readfilebuf(char** oldbuf, int bl, int fd);
 
 struct chunk{
   char* start;
@@ -35,3 +38,9 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc);
 tt_db_t* tt_db_read_file( const char* file_name);
 time_t tt_timegm(struct tm *tm);
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk);
+char* tt_strchar(char* buf, char delim);
+
+char* tt_strdelim(char* buf, int* cnt, char delim, char esc);
+
+
+#endif
