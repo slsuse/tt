@@ -147,4 +147,10 @@ void tt_db_free(tt_db_t* d);
 */
 int tt_db_add_project(tt_db_t* db, tt_p_t* project);
 
+/* list all projects of a given registry */
+int tt_db_ls(tt_db_t* db, FILE* stream);
+
+/* list all projects of a given registry recursively */
+int tt_db_lsR(tt_db_t* db, FILE* stream);
+
 #endif

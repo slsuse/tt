@@ -1,0 +1,8 @@
+Für ACME und EMACS Orgmode.
+
+git status
+git pull
+git commit -m "DEFAULT COMMIT MESSAGE"
+git push
+git merge ours frontend
+git ls-files -u
