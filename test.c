@@ -39,6 +39,13 @@ void test_strdelim(const char* str){
   }
 }
 
+void test_tt_db_read_file(const char* fname){
+  tt_db_t* db = NULL;
+
+  db = tt_db_read_file(fname);
+  tt_db_lsR(db, stdout);
+  tt_db_free(db);
+}
 
 void test_d(void){
   tt_d_t* d = NULL;
@@ -298,6 +305,8 @@ int main(){
   test_p1();
   test_db1();
   */
+
+  /*
   {
     const char* s = "a,b,cde,f,g,hijkl,m,n";
     printf("%s:%d %s\n", __FILE__, __LINE__, s);
@@ -307,6 +316,8 @@ int main(){
     const char* s = "a\\,b\\,cde,f,g,hijkl,m\\,n";
     printf("%s:%d %s\n", __FILE__, __LINE__, s);
     test_strdelim(s);
-  }
+    }*/
+
+  test_tt_db_read_file("test.csv");
   return 0;
 }

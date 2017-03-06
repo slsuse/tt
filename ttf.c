@@ -16,12 +16,14 @@
    read and parse file 
    WARNING:
    This is ugly as hell, it's written in leftover minutes 
-   without much foxus
+   without much focus
    and currently contains unsanitized ideas.
 */
 
-/* return < 0 on error or new length of buf */
-int readfilebuf(char** buf, int bl, int fd) {
+/* return < 0 on error or new length of buf 
+   save position of null terminator in slen
+*/
+int readfilebuf(char** buf, int* slen, int bl, int fd) {
   int pos = 0;
   int l = bl;
   int max = l-1;
@@ -34,8 +36,8 @@ int readfilebuf(char** buf, int bl, int fd) {
     if(0 == (max -= nread)){
       l *=2;
       if(NULL == (b = realloc( b, sizeof(char) * l ))){
-	perror("read");
-	return -1;
+        perror("read");
+        return -1;
       }
       *buf = b;
       max = l-1;
@@ -46,6 +48,7 @@ int readfilebuf(char** buf, int bl, int fd) {
     perror("read");
     return -2;
   }
+  *slen = pos;
   return l;
 }
 
@@ -144,11 +147,15 @@ char* tt_strchar(char* buf, char delim){
   return NULL;
 }
 
-
+/*WARNING: REALLY int ids, not alnum? */
 int parse_id(struct chunk* sc, char delim){
-  sc->end = tt_strchar(sc->start, delim); 
-  if( NULL == sc->end){
-    fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
+  sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
+  /*
+  fprintf(stderr, "%s:%d: start: %s, cnt: %d, del: %c, esc: %c\n",
+          __FILE__, __LINE__, sc->start, sc->cnt, delim, sc->esc);
+  */
+  if(*(sc->end) == '\0'){
+    fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
     //free(buf);
     //tt_db_free(ret);
     return -1;
@@ -158,9 +165,11 @@ int parse_id(struct chunk* sc, char delim){
 }
 
 char* parse_name(struct chunk* sc, char delim){  
-  sc->end =  tt_strchar( sc->start, delim);
-  if( NULL == sc->end){
-    fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
+  sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
+  
+  if(*(sc->end) == '\0'){
+    
+    fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
     return NULL;
   }
   *(sc->end) = (char) 0x0;
@@ -169,9 +178,13 @@ char* parse_name(struct chunk* sc, char delim){
 
 time_t parse_time(struct chunk* sc, char delim){
   struct tm stm;
-  sc->end =  tt_strchar( sc->start, delim);
-  if( NULL == sc->end){
-    fprintf(stderr, "%s/%d: corrupt data\n", __FILE__, __LINE__);
+  sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
+
+  fprintf(stderr, "%s:%d: start: %s, cnt: %d, del: %c, esc: %c\n",
+          __FILE__, __LINE__, sc->start, sc->cnt, delim, sc->esc);
+  
+  if(*(sc->end) == '\0'){
+     fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
     return 0;
   }
   *(sc->end) = (char) 0x0;
@@ -191,33 +204,41 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
   if( 0> (pid = parse_id(sc, sc->coldelim))){
     return -1;
   }
-  sc->start = ++(sc->end);
+  sc->start = (sc->end)+(sc->cnt)+1;
+  /*sc->start = ++(sc->end);*/
    
   /* project name */
   if(NULL == (pname = parse_name(sc, sc->coldelim))){
     return -2;
   }
-  sc->start = ++(sc->end);
+  sc->start = (sc->end)+(sc->cnt)+1;
   
   /* task id */
   if( 0> (tid = parse_id(sc, sc->coldelim))){
     return -3;
   }
-  sc->start = ++(sc->end);
+  sc->start = (sc->end)+(sc->cnt)+1;
+ 
   /* task name */
   if(NULL == (tname = parse_name(sc, sc->coldelim))){
     return -4;
   }
-  sc->start = ++(sc->end);
+  sc->start = (sc->end)+(sc->cnt)+1;
+  
   /* duration start */
   if(0 == (dstart = parse_time(sc, sc->coldelim))){
     return -5;
   }
-  sc->start = ++(sc->end);
+  sc->start = (sc->end)+(sc->cnt)+1;
+
+  fprintf(stderr, "%s:%d: last row!\n", __FILE__, __LINE__);
+    
   /* duration end */
   if(0 == (dstop = parse_time(sc, sc->rowdelim))){
     return -6;
   }
+
+  sc->start = (sc->end)+(sc->cnt)+1;
    
   {
     tt_t_t* tmptsk = NULL;
@@ -278,7 +299,9 @@ tt_db_t* tt_db_read_file( const char* file_name){
   {
     char* buf = NULL;
     int bl = 128;
+    int slen = 0;
     int l = 0;
+    int nparsed = 0;
     struct chunk sc;
 
     if( NULL == (buf = malloc(sizeof(char)*bl))){
@@ -286,7 +309,7 @@ tt_db_t* tt_db_read_file( const char* file_name){
       return NULL;
     }
     
-    if( 0 > (l = readfilebuf(&buf, bl, fd))){
+    if( 0 > (l = readfilebuf(&buf, &slen, bl, fd))){
       free(buf);
       tt_db_free(ret);
       return NULL;
@@ -294,15 +317,27 @@ tt_db_t* tt_db_read_file( const char* file_name){
     
     sc.start = buf;
     sc.end = buf;
+    sc.cnt = 0;
+    sc.esc = '\\';
     sc.coldelim = ',';
     sc.rowdelim = '\n';
 
-    while(l > (sc.end - buf)){
+    /*
+      BUG: 
+      End Of Buf not caught.
+      l is the malloc length, not the data length.
+Off by one left!
+    */
+    
+    while(slen > nparsed){
+      fprintf(stderr, "%s:%d: slen: %d nparsed: %d\n",
+              __FILE__, __LINE__, slen, nparsed);
       if( 0> parse_line(buf, ret, &sc)){
         free(buf);
         tt_db_free(ret);
         return NULL;
       }
+      nparsed = (sc.end - buf) + sc.cnt;
     }
     free(buf);
   }  

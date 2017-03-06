@@ -20,13 +20,15 @@ static const char* tt_time_format = "%Y-%m-%d %H:%M:%S";
    - read in buf 
    - reallocing buf if necessary
 */
-int readfilebuf(char** oldbuf, int bl, int fd);
+int readfilebuf(char** oldbuf, int* slen, int bl, int fd);
 
 struct chunk{
   char* start;
   char* end;
   char coldelim;
   char rowdelim;
+  char esc;
+  int cnt; /*no of removed esc characters*/
 };
 
 int parse_id(struct chunk *sc, char delim);
@@ -39,7 +41,17 @@ tt_db_t* tt_db_read_file( const char* file_name);
 time_t tt_timegm(struct tm *tm);
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk);
 char* tt_strchar(char* buf, char delim);
+/* return pointer to delimiter or end of string 
+   get rid of escaping by removing esc inplace 
+   (truncating the delimited string)
+   cnt must be allocated and will contain the
+   number of removed esc characters.
 
+   SEE:
+       -  test_strdelim in test.c for example usage.
+   TODO:
+       - change parse_* to use tt_strdelim instead of tt_strchar
+*/
 char* tt_strdelim(char* buf, int* cnt, char delim, char esc);
 
 
