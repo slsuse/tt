@@ -198,7 +198,7 @@ int db_add_run( tt_db_t* db, unsigned int pid, unsigned int tid, tt_d_t* run){
 	  tt_t_add_run(t, run);
 	  return 0;
 	}
-	/*TODO:
+	/* TODO: clean up or delete.
 	  create new task and project? Without names? Really?
 	*/
 	else{

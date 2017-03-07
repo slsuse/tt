@@ -49,9 +49,7 @@ char* tt_strchar(char* buf, char delim);
 
    SEE:
        -  test_strdelim in test.c for example usage.
-   TODO:
-       - change parse_* to use tt_strdelim instead of tt_strchar
-*/
+   */
 char* tt_strdelim(char* buf, int* cnt, char delim, char esc);
 
 

@@ -30,9 +30,9 @@ int readfilebuf(char** buf, int* slen, int bl, int fd) {
   int nread = -1;
   char* b = *buf;
   errno = 0;
-  while(0 < (nread = read(fd, b+pos, max))){
+  while(0 < (nread = read(fd, b+pos, max))){ 
     pos += nread;
-    /* make sure nread == 0 means EOF */
+    
     if(0 == (max -= nread)){
       l *=2;
       if(NULL == (b = realloc( b, sizeof(char) * l ))){
@@ -40,9 +40,9 @@ int readfilebuf(char** buf, int* slen, int bl, int fd) {
         return -1;
       }
       *buf = b;
-      max = l-1;
+      max = (l-nread)-1; 
     }
-    b[pos] = (char) 0x0;
+    b[pos] = (char) 0x0; 
   }
   if(0>nread){
     perror("read");
@@ -84,8 +84,6 @@ int tt_unesc(char* s, char esc){
 
    SEE:
        -  test_strdelim in test.c for example usage.
-   TODO:
-       - change parse_* to use tt_strdelim instead of tt_strchar
 */
 char* tt_strdelim(char* buf, int* cnt, char delim, char esc){
   char* src = buf;
@@ -147,17 +145,14 @@ char* tt_strchar(char* buf, char delim){
   return NULL;
 }
 
-/*WARNING: REALLY int ids, not alnum? */
+/* WARNING: 
+   REALLY int ids, not alnum? */
 int parse_id(struct chunk* sc, char delim){
   sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
-  /*
-  fprintf(stderr, "%s:%d: start: %s, cnt: %d, del: %c, esc: %c\n",
-          __FILE__, __LINE__, sc->start, sc->cnt, delim, sc->esc);
-  */
+ 
   if(*(sc->end) == '\0'){
     fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
-    //free(buf);
-    //tt_db_free(ret);
+ 
     return -1;
   }
   *(sc->end) = (char) 0x0;
@@ -179,19 +174,28 @@ char* parse_name(struct chunk* sc, char delim){
 time_t parse_time(struct chunk* sc, char delim){
   struct tm stm;
   sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
-
-  fprintf(stderr, "%s:%d: start: %s, cnt: %d, del: %c, esc: %c\n",
-          __FILE__, __LINE__, sc->start, sc->cnt, delim, sc->esc);
-  
+   
   if(*(sc->end) == '\0'){
      fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
     return 0;
   }
   *(sc->end) = (char) 0x0;
   strptime( sc->start, tt_time_format, &stm);
-  return tt_timegm(&stm);
+  /* TODO: DST.
+     The value specified in the tm_isdst field informs mktime()
+     whether or not daylight saving time (DST) is in effect for the
+     time supplied in the tm structure: a positive value means DST is
+     in effect; zero means that DST is not in effect; and a negative
+     value means that mktime() should (use timezone information and
+     sys- tem databases to) attempt to determine whether DST is in
+     effect at the specified time.  */
+  return mktime(&stm);
 }
-  
+
+/* TODO: clean up.
+   function is too long. Break down into simpler pieces.
+   interface changed, buf no longer necessary (is referenced in sc)
+*/   
 int parse_line(char* buf, tt_db_t* db, struct chunk* sc){  
   int pid = 0;
   int tid = 0;
@@ -216,7 +220,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
   /* task id */
   if( 0> (tid = parse_id(sc, sc->coldelim))){
     return -3;
-  }
+  }   
   sc->start = (sc->end)+(sc->cnt)+1;
  
   /* task name */
@@ -226,53 +230,53 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
   sc->start = (sc->end)+(sc->cnt)+1;
   
   /* duration start */
+    
   if(0 == (dstart = parse_time(sc, sc->coldelim))){
     return -5;
   }
+  
   sc->start = (sc->end)+(sc->cnt)+1;
-
-  fprintf(stderr, "%s:%d: last row!\n", __FILE__, __LINE__);
     
   /* duration end */
   if(0 == (dstop = parse_time(sc, sc->rowdelim))){
     return -6;
   }
-
   sc->start = (sc->end)+(sc->cnt)+1;
    
   {
     tt_t_t* tmptsk = NULL;
     tt_p_t* tmppr = NULL;
-    
-    tmptsk = tt_db_find_task(db, pname, tname);
+    tt_d_t* tmpd = NULL;
+    /* TODO: sanitize here, i.e. check for identical start-stop pairs?
+       TODO: error checking.
+      */
+    fprintf(stderr,"%s:%d:    pname: [%s] tname: [%s]\n",__FILE__, __LINE__, pname, tname);
+    tmppr = tt_db_find_project(db, pname);
+    if(NULL == tmppr){
+      fprintf(stderr,"%s:%d:  pr not found [%s]\n",__FILE__, __LINE__, pname);
+      tmppr = tt_p_new(pname);
+      tt_p_setid(tmppr, pid);
+      tt_db_add_project(db,tmppr);
+    }
+
+    tmptsk = tt_p_find_task(tmppr,tname);
     if(NULL == tmptsk){
+      fprintf(stderr,"%s:%d:  t not found [%s]\n",__FILE__, __LINE__, tname);
       tmptsk = tt_t_new(tname);
       tt_t_setid(tmptsk, tid);
-
-      if( NULL == (tmppr = tt_db_find_project(db, pname))){
-        tmppr = tt_p_new(pname);
-        tt_p_setid(tmppr, pid);
-      }
-	
-      tt_p_add_task(tmppr, tmptsk);	
+      tt_p_add_task(tmppr,tmptsk);
     }
 
-    tt_db_add_project(db, tmppr);
-    { /* TODO:
-         sanitize here, i.e. 
-         check for identical start-stop pairs?
-      */
-      tt_d_t* tmpd = NULL;
-      tmpd = tt_d_new(dstart, dstop);
-      tt_t_add_run(tmptsk, tmpd);
-    }
+    tmpd = tt_d_new(dstart, dstop);
+    tt_t_add_run(tmptsk, tmpd);
   }
   
   return 0;
 }
 
 
-
+/* TODO:  function is too long. Break down into simpler pieces.
+*/
 tt_db_t* tt_db_read_file( const char* file_name){
   tt_db_t* ret = NULL;
   int fd = -1;
@@ -293,8 +297,9 @@ tt_db_t* tt_db_read_file( const char* file_name){
     return NULL;
   }
   
-  /* TODO:
-     parse and fill 
+  /* parse and fill 
+ 
+     TODO: better structure!
   */
   {
     char* buf = NULL;
@@ -322,17 +327,8 @@ tt_db_t* tt_db_read_file( const char* file_name){
     sc.coldelim = ',';
     sc.rowdelim = '\n';
 
-    /*
-      BUG: 
-      End Of Buf not caught.
-      l is the malloc length, not the data length.
-Off by one left!
-    */
-    
-    while(slen > nparsed){
-      fprintf(stderr, "%s:%d: slen: %d nparsed: %d\n",
-              __FILE__, __LINE__, slen, nparsed);
-      if( 0> parse_line(buf, ret, &sc)){
+    while((slen - 1) > nparsed){
+        if( 0> parse_line(buf, ret, &sc)){
         free(buf);
         tt_db_free(ret);
         return NULL;
@@ -350,31 +346,8 @@ Off by one left!
   return ret;
 }
 
-/* see man timegm on Opensuse Leap 42.2 */
-  
-time_t tt_timegm(struct tm *tm)
-{
-  time_t ret;
-  char *tz;
-  
-  tz = getenv("TZ");
-  if (tz)
-    tz = strdup(tz);
-  setenv("TZ", "", 1);
-  tzset();
-  ret = mktime(tm);
-  if (tz) {
-    setenv("TZ", tz, 1);
-    free(tz);
-  } else
-    unsetenv("TZ");
-  tzset();
-  return ret;
-}
-
-/* TODO: 
-   - error checking 
-   - escaping ','
+/* TODO:  error checking. 
+   TODO:  escaping ','.
 */
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   char buf[32];
@@ -418,23 +391,9 @@ int tt_p_tocsv( tt_p_t* p, int fd){
   return 0;
 }
 
-int tt_db_update( tt_db_t* db, int fd){
-  /* TODO:
-     - read buf
-     - strchr '\n'
-     - strtok ','
-  */
-  const int len = 128;
-  char buf[128];
-  int first = 0;
-  int last = 0;
-  int nread = 0;
-
-  nread = read(fd, buf+first, len);
-  return 0;
-}
-
-/* safe a task table, csv */
+/* safe a task table, csv 
+   TODO: test.
+*/
 int tt_write_file( tt_db_t* t, char* file_name){
   int fd;
   
@@ -444,11 +403,7 @@ int tt_write_file( tt_db_t* t, char* file_name){
   if(NULL == file_name)
     return -2;
   
-  /* TODO
-     open readwrite
-     lockf / flock
-     parse file and update t
-  */
+  /* TODO: parse file and update it.  */
 
   errno = 0;
 
@@ -462,14 +417,9 @@ int tt_write_file( tt_db_t* t, char* file_name){
     return -4;
   }
 
-  
-
   for( int i =  0; i < t->nprojects; i++){
     tt_p_tocsv( t->projects[i], fd);
   }
-  /* TODO
-     close and unlock
-  */
   close(fd);
   return 0;
 }

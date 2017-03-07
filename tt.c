@@ -285,7 +285,7 @@ tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname){
       return t;
     }
   }
-  return t;
+  return NULL;
 }
 
 tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname){
@@ -296,7 +296,7 @@ tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname){
       return p;
     }
   }
-  return p;
+  return NULL;
 }
 
 tt_t_t* tt_db_find_task(tt_db_t* db,
