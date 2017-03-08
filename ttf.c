@@ -12,14 +12,6 @@
 #include "ttf.h"
 
 
-/* Codehalde:
-   read and parse file 
-   WARNING:
-   This is ugly as hell, it's written in leftover minutes 
-   without much focus
-   and currently contains unsanitized ideas.
-*/
-
 /* return < 0 on error or new length of buf 
    save position of null terminator in slen
 */
@@ -145,8 +137,7 @@ char* tt_strchar(char* buf, char delim){
   return NULL;
 }
 
-/* WARNING: 
-   REALLY int ids, not alnum? */
+/* REALLY int ids, not alnum? */
 int parse_id(struct chunk* sc, char delim){
   sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
  
@@ -181,14 +172,16 @@ time_t parse_time(struct chunk* sc, char delim){
   }
   *(sc->end) = (char) 0x0;
   strptime( sc->start, tt_time_format, &stm);
+  
   /* TODO: DST.
      The value specified in the tm_isdst field informs mktime()
      whether or not daylight saving time (DST) is in effect for the
      time supplied in the tm structure: a positive value means DST is
      in effect; zero means that DST is not in effect; and a negative
      value means that mktime() should (use timezone information and
-     sys- tem databases to) attempt to determine whether DST is in
+     system databases to) attempt to determine whether DST is in
      effect at the specified time.  */
+  stm.tm_isdst = -1; /* FIXME: best solution is to register dst in the csv. */
   return mktime(&stm);
 }
 
@@ -247,7 +240,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     tt_t_t* tmptsk = NULL;
     tt_p_t* tmppr = NULL;
     tt_d_t* tmpd = NULL;
-    /* TODO: sanitize here, i.e. check for identical start-stop pairs?
+    /* FIXME: TODO: sanitize here, i.e. check for start-stop pairs already in db.
        TODO: error checking.
       */
     fprintf(stderr,"%s:%d:    pname: [%s] tname: [%s]\n",__FILE__, __LINE__, pname, tname);
@@ -403,7 +396,10 @@ int tt_write_file( tt_db_t* t, char* file_name){
   if(NULL == file_name)
     return -2;
   
-  /* TODO: parse file and update it.  */
+  /* TODO: parse file and update it. 
+     using tt_db_read_file requires this function to recognize task runs,
+     i.e. already registered tt_d_t's. 
+  */
 
   errno = 0;
 
