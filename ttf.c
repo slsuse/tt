@@ -22,19 +22,19 @@ int readfilebuf(char** buf, int* slen, int bl, int fd) {
   int nread = -1;
   char* b = *buf;
   errno = 0;
-  while(0 < (nread = read(fd, b+pos, max))){ /* FIXME: valgrind complaint */
+  while(0 < (nread = read(fd, b+pos, max))){ 
     pos += nread;
     
     if(0 == (max -= nread)){
       max = l-1;
       l *=2;
-      if(NULL == (b = realloc( b, sizeof(char) * l ))){ /* FIXME: valgrind complaint */
+      if(NULL == (b = realloc( b, sizeof(char) * l ))){
         perror("read");
         return -1;
       }
       *buf = b;
     }
-    b[pos] = (char) 0x0; /* FIXME: valgrind complaint */
+    b[pos] = (char) 0x0;
   }
   if(0>nread){
     perror("read");
@@ -241,7 +241,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     tt_t_t* tmptsk = NULL;
     tt_p_t* tmppr = NULL;
     tt_d_t* tmpd = NULL;
-    /* FIXME: TODO: sanitize here, i.e. check for start-stop pairs already in db.
+    /* TODO: sanitize here, i.e. check for start-stop pairs already in db.
        TODO: error checking.
       */
     tmppr = tt_db_find_project(db, pname);
