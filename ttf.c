@@ -22,19 +22,19 @@ int readfilebuf(char** buf, int* slen, int bl, int fd) {
   int nread = -1;
   char* b = *buf;
   errno = 0;
-  while(0 < (nread = read(fd, b+pos, max))){ 
+  while(0 < (nread = read(fd, b+pos, max))){ /* FIXME: valgrind complaint */
     pos += nread;
     
     if(0 == (max -= nread)){
+      max = l-1;
       l *=2;
-      if(NULL == (b = realloc( b, sizeof(char) * l ))){
+      if(NULL == (b = realloc( b, sizeof(char) * l ))){ /* FIXME: valgrind complaint */
         perror("read");
         return -1;
       }
       *buf = b;
-      max = (l-nread)-1; 
     }
-    b[pos] = (char) 0x0; 
+    b[pos] = (char) 0x0; /* FIXME: valgrind complaint */
   }
   if(0>nread){
     perror("read");
@@ -164,6 +164,7 @@ char* parse_name(struct chunk* sc, char delim){
 
 time_t parse_time(struct chunk* sc, char delim){
   struct tm stm;
+ 
   sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
    
   if(*(sc->end) == '\0'){
@@ -243,25 +244,25 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     /* FIXME: TODO: sanitize here, i.e. check for start-stop pairs already in db.
        TODO: error checking.
       */
-    fprintf(stderr,"%s:%d:    pname: [%s] tname: [%s]\n",__FILE__, __LINE__, pname, tname);
     tmppr = tt_db_find_project(db, pname);
     if(NULL == tmppr){
-      fprintf(stderr,"%s:%d:  pr not found [%s]\n",__FILE__, __LINE__, pname);
       tmppr = tt_p_new(pname);
       tt_p_setid(tmppr, pid);
       tt_db_add_project(db,tmppr);
     }
-
+  
     tmptsk = tt_p_find_task(tmppr,tname);
     if(NULL == tmptsk){
-      fprintf(stderr,"%s:%d:  t not found [%s]\n",__FILE__, __LINE__, tname);
       tmptsk = tt_t_new(tname);
       tt_t_setid(tmptsk, tid);
       tt_p_add_task(tmppr,tmptsk);
     }
-
+    
     tmpd = tt_d_new(dstart, dstop);
-    tt_t_add_run(tmptsk, tmpd);
+    if(0 > tt_t_find_run(tmptsk, tmpd))
+      tt_t_add_run(tmptsk, tmpd);
+    else
+      tt_d_free(tmpd);
   }
   
   return 0;
@@ -308,11 +309,12 @@ tt_db_t* tt_db_read_file( const char* file_name){
     }
     
     if( 0 > (l = readfilebuf(&buf, &slen, bl, fd))){
+      perror("readfilebuf");
       free(buf);
       tt_db_free(ret);
       return NULL;
     }
-    
+   
     sc.start = buf;
     sc.end = buf;
     sc.cnt = 0;

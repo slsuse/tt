@@ -116,6 +116,34 @@ int tt_t_add_run(tt_t_t* task, tt_d_t* duration){
   return task->nruns - 1;
 }
 
+int tt_t_find_run(tt_t_t* task, tt_d_t* duration){
+  if(!task || !duration)
+    return -1;
+  
+  fprintf(stderr,"%s:%d:   task->nruns: %d\n",__FILE__, __LINE__,  task->nruns);
+  for(int i = 0; i < task->nruns; i++){
+    if( 0 < tt_d_same_intervall( task->runs[i], duration))
+      return i; 
+  }
+  
+  return -2;
+}
+
+int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2){
+  if( NULL == d1 || NULL == d2){
+    fprintf(stderr,"%s:%d:   NULL args!\n",__FILE__, __LINE__);
+    return -1;
+  }
+  /*
+  if((d1->start == d2->start) && (d1->finished == d2->finished))
+    return 1;
+  else
+    return 0;
+  */
+    return ((d1->start == d2->start) && (d1->finished == d2->finished));
+}
+
+
 /* start a run on a given task
    return below 0 on error
    or the start time else.

@@ -73,6 +73,8 @@ time_t tt_d_start(tt_d_t* d);
 */
 time_t tt_d_stop(tt_d_t* d);
 
+int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2);
+
 /* malloc a new tt_task_struct
    expect a 0-terminated string which will be copied. */
 tt_t_t* tt_t_new( const char* name);
@@ -100,6 +102,9 @@ int tt_t_start_run(tt_t_t* task);
    or the finish time else.
 */
 int tt_t_stop_run(tt_t_t* task);
+
+/* returns the index of the intervall in task->runs */
+int tt_t_find_run(tt_t_t* task, tt_d_t* duration);
 
 /* list the runs of a given task */
 
