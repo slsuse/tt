@@ -134,13 +134,7 @@ int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2){
     fprintf(stderr,"%s:%d:   NULL args!\n",__FILE__, __LINE__);
     return -1;
   }
-  /*
-  if((d1->start == d2->start) && (d1->finished == d2->finished))
-    return 1;
-  else
-    return 0;
-  */
-    return ((d1->start == d2->start) && (d1->finished == d2->finished));
+  return ((d1->start == d2->start) && (d1->finished == d2->finished));
 }
 
 
