@@ -241,9 +241,8 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     tt_t_t* tmptsk = NULL;
     tt_p_t* tmppr = NULL;
     tt_d_t* tmpd = NULL;
-    /* FIXME: TODO: sanitize here, i.e. check for start-stop pairs already in db.
-       TODO: error checking.
-      */
+    /* TODO: error checking.
+     */
     tmppr = tt_db_find_project(db, pname);
     if(NULL == tmppr){
       tmppr = tt_p_new(pname);
@@ -269,32 +268,8 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
 }
 
 
-/* TODO:  function is too long. Break down into simpler pieces.
-*/
-tt_db_t* tt_db_read_file( const char* file_name){
-  tt_db_t* ret = NULL;
-  int fd = -1;
-  errno = 0;
-  
-  /* open and lock */
-  if( 0 > (fd = open( file_name, O_RDONLY))){
-    perror("tt_db_read_file");
-    return NULL;
-  }
-  if( 0 > (flock( fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
-    perror("tt_db_read_file");
-    return NULL;
-  }
-    
-  /* create ret */
-  if( NULL == (ret = (tt_db_new()))){
-    return NULL;
-  }
-  
-  /* parse and fill 
- 
-     TODO: better structure!
-  */
+tt_db_t* tt_db_update(tt_db_t* db, int fd){
+  errno = 0;   
   {
     char* buf = NULL;
     int bl = 128;
@@ -311,7 +286,6 @@ tt_db_t* tt_db_read_file( const char* file_name){
     if( 0 > (l = readfilebuf(&buf, &slen, bl, fd))){
       perror("readfilebuf");
       free(buf);
-      tt_db_free(ret);
       return NULL;
     }
    
@@ -323,37 +297,95 @@ tt_db_t* tt_db_read_file( const char* file_name){
     sc.rowdelim = '\n';
 
     while((slen - 1) > nparsed){
-        if( 0> parse_line(buf, ret, &sc)){
+      if( 0> parse_line(buf, db, &sc)){
         free(buf);
-        tt_db_free(ret);
+        
         return NULL;
       }
       nparsed = (sc.end - buf) + sc.cnt;
     }
     free(buf);
-  }  
-  /* close should unlock  */
+  }
+  return db;
+}
+
+tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
+  tt_db_t* ret = NULL;
+  int fd = -1;
+  errno = 0;
+  
+  if( 0 > (fd = open( file_name, O_RDONLY))){
+    perror("tt_db_read_file");
+    return NULL;
+  }
+  if( 0 > (flock( fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
+    perror("tt_db_read_file");
+    return NULL;
+  }
+
+  ret = tt_db_update(db, fd);
+  
   if(0 != close(fd)){
     perror("close");
-    tt_db_free(ret);
+    
     return NULL;
   }
   return ret;
 }
 
 /* TODO:  error checking. 
-   TODO:  escaping ','.
+   FIXME:  escaping ','.
 */
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   char buf[32];
   
   snprintf(buf, 32, "%d,", curpr->id);
   write(fd, buf, 32);
-  write(fd, curpr->name, strlen(curpr->name));
+  
+  /*write(fd, curpr->name, strlen(curpr->name));*/
+  /*TODO: test escaping. */
+  {
+    int j = 0;
+    int l =  strlen(curpr->name);
+    while( j < l){
+      int i = 0;
+      while(i < 31 && j < l){
+        switch(curpr->name[j]){
+        case ',':
+        case '\\':
+          buf[i++] = '\\';
+        default:
+          buf[i++] = curpr->name[j++];
+          break;
+        }
+      }
+      write(fd,buf,32);
+    }
+  }
   write(fd, ",", 1);
   snprintf(buf, 32, "%d,", curtsk->id);
   write(fd, buf, 32);
-  write(fd, curtsk->name, strlen(curtsk->name));
+ 
+  /* write(fd, curtsk->name, strlen(curtsk->name)); */
+  /*TODO: test escaping. */
+  {
+    int j = 0;
+    int l =  strlen(curtsk->name);
+    while( j < l){
+      int i = 0;
+      while(i < 31 && j < l){
+        switch(curtsk->name[j]){
+        case ',':
+        case '\\':
+          buf[i++] = '\\';
+        default:
+          buf[i++] = curtsk->name[j++];
+          break;
+        }
+      }
+      write(fd,buf,32);
+    }
+  } 
   write(fd, ",", 1);
   
   { /* time_t to struct tm to string */
@@ -398,14 +430,11 @@ int tt_write_file( tt_db_t* t, char* file_name){
   if(NULL == file_name)
     return -2;
   
-  /* TODO: parse file and update it. 
-     using tt_db_read_file requires this function to recognize task runs,
-     i.e. already registered tt_d_t's. 
-  */
+  /* TODO: error handling
+   */
 
   errno = 0;
 
-  /* open and lock */
   if( 0 > (fd = open( file_name, O_RDWR))){
     perror("tt_db_write_file");
     return -3;
@@ -415,6 +444,11 @@ int tt_write_file( tt_db_t* t, char* file_name){
     return -4;
   }
 
+  if( NULL == tt_db_update(t, fd)){
+    perror("tt_db_write_file");
+    return -5;
+  }
+  
   for( int i =  0; i < t->nprojects; i++){
     tt_p_tocsv( t->projects[i], fd);
   }

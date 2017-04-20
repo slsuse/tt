@@ -32,15 +32,26 @@ struct chunk{
 };
 
 int parse_id(struct chunk *sc, char delim);
+
 char* parse_name(struct chunk *sc, char delim);
+
 time_t parse_time(struct chunk *sc, char delim);
 
 int parse_line(char* buf, tt_db_t* db, struct chunk* sc);
-/* read and parse */
-tt_db_t* tt_db_read_file( const char* file_name);
+
+/* read and parse, updating db */
+tt_db_t* tt_db_update(tt_db_t* db, int fd);
+tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name);
+
+/* safe a task table, csv */
+int tt_write_file( tt_db_t* t, char* file_name);
+
 time_t tt_timegm(struct tm *tm);
+
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk);
+
 char* tt_strchar(char* buf, char delim);
+
 /* return pointer to delimiter or end of string 
    get rid of escaping by removing esc inplace 
    (truncating the delimited string)

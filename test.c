@@ -41,8 +41,8 @@ void test_strdelim(const char* str){
 
 void test_tt_db_read_file(const char* fname){
   tt_db_t* db = NULL;
-
-  db = tt_db_read_file(fname);
+  db = tt_db_new();
+  tt_db_read_file(db, fname);
   tt_db_lsR(db, stdout);
   tt_db_free(db);
 }
