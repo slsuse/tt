@@ -13,5 +13,6 @@
 ## TODO
 
 1. ttfs - filesystem interface, preferably csv. Safe concurrent file access.
-2. ttcfg - configuration, environment, arguments.
-3. cli frontends - create, list, switch tasks, projects. Clock in/out tasks.
+2. ttcfg - configuration, environment, arguments. Gengetopt?
+3. cli frontend - create, list, and clock in/out tasks.
+4. tts - collection of stuff to use the data (R, RDBMS, GUI app, ...)
