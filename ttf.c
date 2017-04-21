@@ -335,59 +335,90 @@ tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
   return ret;
 }
 
+/* i, j, buf[32], curpr, fd*/
+void esc_write(int fd, const char* s){
+  char buf[64];
+  
+  /*TODO: test escaping. */
+  {
+    int j = 0;
+    int l =  strlen(s);
+    while( j < l){
+      int i = 0;
+      while(i < 63 && j < l){
+        switch( s[j] ){
+        case ',':
+        case '\\':
+          buf[i++] = '\\';
+        default:
+          buf[i++] = s[j++];
+          break;
+        }
+      }
+      write(fd,buf,i);
+    }
+  }
+
+}
+
 /* TODO:  error checking. 
-   FIXME:  escaping ','.
 */
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   char buf[32];
+  int rl = 0;
   
-  snprintf(buf, 32, "%d,", curpr->id);
-  write(fd, buf, 32);
+  rl = snprintf(buf, 32, "%d,", curpr->id);
+  write(fd, buf, rl);
+
+  esc_write(fd, curpr->name);
   
   /*write(fd, curpr->name, strlen(curpr->name));*/
   /*TODO: test escaping. */
-  {
-    int j = 0;
-    int l =  strlen(curpr->name);
-    while( j < l){
-      int i = 0;
-      while(i < 31 && j < l){
-        switch(curpr->name[j]){
-        case ',':
-        case '\\':
-          buf[i++] = '\\';
-        default:
-          buf[i++] = curpr->name[j++];
-          break;
-        }
-      }
-      write(fd,buf,32);
-    }
-  }
+  /* { */
+  /*   int j = 0; */
+  /*   int l =  strlen(curpr->name); */
+  /*   while( j < l){ */
+  /*     int i = 0; */
+  /*     while(i < 31 && j < l){ */
+  /*       switch(curpr->name[j]){ */
+  /*       case ',': */
+  /*       case '\\': */
+  /*         buf[i++] = '\\'; */
+  /*       default: */
+  /*         buf[i++] = curpr->name[j++]; */
+  /*         break; */
+  /*       } */
+  /*     } */
+  /*     write(fd,buf,32); */
+  /*   } */
+  /* } */
+
   write(fd, ",", 1);
-  snprintf(buf, 32, "%d,", curtsk->id);
-  write(fd, buf, 32);
- 
+  
+  rl = snprintf(buf, 32, "%d,", curtsk->id);
+  write(fd, buf, rl);
+  esc_write(fd, curtsk->name);
+  
   /* write(fd, curtsk->name, strlen(curtsk->name)); */
   /*TODO: test escaping. */
-  {
-    int j = 0;
-    int l =  strlen(curtsk->name);
-    while( j < l){
-      int i = 0;
-      while(i < 31 && j < l){
-        switch(curtsk->name[j]){
-        case ',':
-        case '\\':
-          buf[i++] = '\\';
-        default:
-          buf[i++] = curtsk->name[j++];
-          break;
-        }
-      }
-      write(fd,buf,32);
-    }
-  } 
+  /* { */
+  /*   int j = 0; */
+  /*   int l =  strlen(curtsk->name); */
+  /*   while( j < l){ */
+  /*     int i = 0; */
+  /*     while(i < 31 && j < l){ */
+  /*       switch(curtsk->name[j]){ */
+  /*       case ',': */
+  /*       case '\\': */
+  /*         buf[i++] = '\\'; */
+  /*       default: */
+  /*         buf[i++] = curtsk->name[j++]; */
+  /*         break; */
+  /*       } */
+  /*     } */
+  /*     write(fd,buf,32); */
+  /*   } */
+  /* }  */
   write(fd, ",", 1);
   
   { /* time_t to struct tm to string */

@@ -10,6 +10,7 @@ typedef enum args{
   help,
   ls,
   lsr,
+  t,
   add,
   rm
 } args_t;
@@ -31,13 +32,16 @@ args_t args(int argc, char** argv){
     return help;
   
   if(0 == strcmp("ls", argv[1])){
-    if(argc == 2)
-      return help;
+    /*   if(argc == 2)
+         return help;*/
     return ls;
   }
   
   if(0 == strcmp("lsr", argv[1]))
     return lsr;
+  
+  if(0 == strcmp("t", argv[1]))
+    return t; /*FIXME: printing tasks - give CLI some thought. */
   
   if(0 == strcmp("add", argv[1]))
     return add;
@@ -49,21 +53,49 @@ args_t args(int argc, char** argv){
 }
 
 void pr_help(const char* name){
-  printf("%s [command]\n", name);
-  printf("command is:\n");
-  printf("\t[-h|--help|h|help] - print this screen.\n");
-  printf("\tls - list registered projects.\n");
-  printf("\tlsr - list recursively, i.e. all data down to clocked times.\n");
-  printf("\tadd - register a project.\n");
-  printf("\trm - rm a project.\n");
+  /* TODO: At this point GNU gengetopt might become worth the hassle. */
+  printf("%s [<command>]\n", name);
+  printf("where <command> is:\n");
+
+  printf("[-h|--help|h|help]                  - print this screen.\n");
+
+  printf(" -p ls [<project1> <project2> ...]\n");
+  printf("                                    - list registered projects.\n");
+  printf(" -p lsr [<project1> <project2> ...] - list recursively, i.e. all data down to clocked times.\n");
+  printf(" -p add <project1> [<project2> <project3> ...]\n");
+  printf("                                    - register a project.\n");
+  printf(" -p rm  <project>  [<project2> <project3> ...]\n");
+  printf("                                    - rm a project.\n");
+  
+  /*FIXME: printing tasks - give CLI some thought. */
+  
+  printf(" -t ls <project> <task> [<task2> <task3> ...]\n");
+  printf("                                    - print task times.\n");
+
+
+  printf(" -t add <project> <task> [<task2> <task3> ...]\n");
+  printf("                                    - register tasks in a project.\n");
+ 
             
 }
 
-void lsr_file(const char* fname){
+void ls_r(int argc, char** argv, const char* fname){
   tt_db_t* db = NULL;
+  
   db = tt_db_new();
   tt_db_read_file(db, fname);
-  tt_db_lsR(db, stdout);
+
+  if(argc == 2)
+    tt_db_lsR(db, stdout);
+  else{
+    for( int i = 2; i < argc; i++){
+      tt_p_t* p = tt_db_find_project( db, argv[i]);
+      if(p)
+        tt_p_lsR( p, stdout);
+      else
+        fprintf(stderr, "project '%s' not found.\n", argv[i]);
+    }
+  }
   tt_db_free(db);
 }
 
@@ -72,23 +104,35 @@ void lsr_file(const char* fname){
    currently only queries environment,
    a config file might be added at a later stage. */
 
-char* get_db_fname(void){
+const char* get_db_fname(void){
   char* ret = NULL;
-  if(NULL ==(ret = getenv("TT_DB")))
-    ret = default_file;
-  return ret;
+
+  if(NULL !=(ret = getenv("TT_DB")))
+    return ret;
+  
+  return default_file;
 }
 
-void ls_all_p(int argc, char** argv){
+void plain_ls(int argc, char** argv){
   tt_db_t* db = NULL;
+
   db = tt_db_new();
   tt_db_read_file(db, get_db_fname());
-  
-  for( int i = 2; i < argc; i++){
-    tt_p_t* p = tt_db_find_project( db,argv[i]);
-    tt_p_ls( p, stdout);
-  }
 
+  if(argc == 2){
+    for(int i = 0; i < db->nprojects; i++){
+      printf("%s\n", db->projects[i]->name);
+    }
+  }
+  else{
+    for( int i = 2; i < argc; i++){
+      tt_p_t* p = tt_db_find_project( db,argv[i]);
+      if(p)
+        tt_p_ls( p, stdout);
+      else
+        fprintf(stderr, "project '%s' not found.\n", argv[i]);
+    }
+  }
   tt_db_free(db);
 }
 
@@ -102,10 +146,10 @@ int main(int argc, char** argv){
     pr_help(argv[0]);
     break;
   case ls:
-    ls_all_p(argc, argv);
+    plain_ls(argc, argv);
     break;
   case lsr:
-    lsr_file(get_db_fname());
+    ls_r( argc, argv, get_db_fname());
     break;
   case add:
     break;
