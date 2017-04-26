@@ -164,16 +164,17 @@ char* parse_name(struct chunk* sc, char delim){
 
 time_t parse_time(struct chunk* sc, char delim){
   struct tm stm;
- 
+  fprintf(stderr, "%s:%d - %s\n", __FILE__, __LINE__, sc->start);
   sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
    
   if(*(sc->end) == '\0'){
      fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
-    return 0;
+    return -1;
   }
   *(sc->end) = (char) 0x0;
-  strptime( sc->start, tt_time_format, &stm);
-  
+  if(sc->start != sc->end){
+    strptime( sc->start, tt_time_format, &stm);
+    fprintf(stderr, "%s:%d - strptime called\n", __FILE__, __LINE__);
   /* TODO: DST.
      The value specified in the tm_isdst field informs mktime()
      whether or not daylight saving time (DST) is in effect for the
@@ -182,8 +183,11 @@ time_t parse_time(struct chunk* sc, char delim){
      value means that mktime() should (use timezone information and
      system databases to) attempt to determine whether DST is in
      effect at the specified time.  */
-  stm.tm_isdst = -1; /* FIXME: best solution is to register dst in the csv. */
-  return mktime(&stm);
+    stm.tm_isdst = -1; /* FIXME: best solution is to register dst in the csv. */
+    return mktime(&stm);
+  }
+  else
+    return 0;
 }
 
 /* TODO: clean up.
@@ -225,14 +229,14 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
   
   /* duration start */
     
-  if(0 == (dstart = parse_time(sc, sc->coldelim))){
+  if(0 > (dstart = parse_time(sc, sc->coldelim))){
     return -5;
   }
   
   sc->start = (sc->end)+(sc->cnt)+1;
     
   /* duration end */
-  if(0 == (dstop = parse_time(sc, sc->rowdelim))){
+  if(0 > (dstop = parse_time(sc, sc->rowdelim))){
     return -6;
   }
   sc->start = (sc->end)+(sc->cnt)+1;
@@ -258,9 +262,9 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
       tt_t_setid(tmptsk, tid);
       tt_p_add_task(tmppr,tmptsk);
     }
-    
+    fprintf(stderr, "%s:%d - %d - %d\n", __FILE__, __LINE__, dstart, dstop);
     tmpd = tt_d_new(dstart, dstop);
-    if(0 > tt_t_find_run(tmptsk, tmpd))
+    if(0 >= tt_t_find_run(tmptsk, tmpd))
       tt_t_add_run(tmptsk, tmpd);
     else
       tt_d_free(tmpd);
@@ -369,7 +373,7 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   
   rl = snprintf(buf, 32, "%d,", curpr->id);
   write(fd, buf, rl);
-
+  write(fd, ",", 1);
   esc_write(fd, curpr->name);
   
   /*write(fd, curpr->name, strlen(curpr->name));*/
@@ -394,10 +398,16 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   /* } */
 
   write(fd, ",", 1);
-  
-  rl = snprintf(buf, 32, "%d,", curtsk->id);
-  write(fd, buf, rl);
-  esc_write(fd, curtsk->name);
+  if(curtsk){
+    rl = snprintf(buf, 32, "%d,", curtsk->id);
+    write(fd, buf, rl);
+    write(fd, ",", 1);
+    esc_write(fd, curtsk->name);
+  }
+  else{ /*empty fields*/
+    write(fd, ",", 1);
+  }
+ 
   
   /* write(fd, curtsk->name, strlen(curtsk->name)); */
   /*TODO: test escaping. */
@@ -420,7 +430,8 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   /*   } */
   /* }  */
   write(fd, ",", 1);
-  
+
+  if(d)
   { /* time_t to struct tm to string */
     char buf[20]; /* strlen("2001-11-12 18:31:01") */
     buf[0] = (char) 0x0;
@@ -431,23 +442,32 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
     
     strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
     write(fd, buf, 20);
+  }
+  else{
     write(fd, ",", 1);
   }
   return 0; 
 }
 
 int tt_t_tocsv( tt_t_t* t, int fd, tt_p_t* curpr){
-  for( int i = 0; i < t->nruns; i++){
-    tt_d_tocsv( t->runs[i], fd, curpr, t);
+  if(t->nruns){
+    for( int i = 0; i < t->nruns; i++){
+      tt_d_tocsv( t->runs[i], fd, curpr, t);
+    }
   }
+  else
+    tt_d_tocsv(NULL, fd, curpr, t);
   return 0;
 }
 
 int tt_p_tocsv( tt_p_t* p, int fd){
-  
-  for( int i = 0; i < p->ntasks; i++){
-    tt_t_tocsv( p->tasklist[i], fd, p);
+  if(p->ntasks){
+    for( int i = 0; i < p->ntasks; i++){
+      tt_t_tocsv( p->tasklist[i], fd, p);
+    }
   }
+  else
+    tt_d_tocsv(NULL, fd, p, NULL);
   return 0;
 }
 

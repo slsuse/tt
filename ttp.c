@@ -8,11 +8,13 @@ const char* default_file = "tt.csv";
 
 typedef enum args{
   help,
-  ls,
-  lsr,
-  t,
-  add,
-  rm
+  p_ls,
+  p_lsr,
+  p_add,
+  p_rm,
+  t_ls,
+  t_add,
+  t_rm
 } args_t;
 
 args_t args(int argc, char** argv){
@@ -30,25 +32,40 @@ args_t args(int argc, char** argv){
   
   if(0 == strcmp("help", argv[1]))
     return help;
+
+  if(argc > 2){
+    if(0 == strcmp("-p", argv[1])){
+      
+      if(0 == strcmp("ls", argv[2])){
+        /*   if(argc == 2)
+             return help;*/
+        return p_ls;
+      }
   
-  if(0 == strcmp("ls", argv[1])){
-    /*   if(argc == 2)
-         return help;*/
-    return ls;
+      if(0 == strcmp("lsr", argv[2]))
+        return p_lsr;
+  
+      if(0 == strcmp("add", argv[2]))
+        return p_add;
+      
+      if(0 == strcmp("rm", argv[2]))
+        return p_rm;
+      
+    }
+    else if(0 == strcmp("-t", argv[1])){
+    
+      if(0 == strcmp("ls", argv[2])){
+        /*   if(argc == 2)
+             return help;*/
+        return t_ls;
+      }
+      if(0 == strcmp("add", argv[2]))
+        return t_add;
+      
+      if(0 == strcmp("rm", argv[2]))
+        return t_rm;
+    }
   }
-  
-  if(0 == strcmp("lsr", argv[1]))
-    return lsr;
-  
-  if(0 == strcmp("t", argv[1]))
-    return t; /*FIXME: printing tasks - give CLI some thought. */
-  
-  if(0 == strcmp("add", argv[1]))
-    return add;
-  
-  if(0 == strcmp("rm", argv[1]))
-    return rm;
-  
   return help;
 }
 
@@ -79,16 +96,17 @@ void pr_help(const char* name){
             
 }
 
-void ls_r(int argc, char** argv, const char* fname){
+void do_p_lsr(int argc, char** argv, const char* fname){
   tt_db_t* db = NULL;
   
   db = tt_db_new();
   tt_db_read_file(db, fname);
 
-  if(argc == 2)
+  if(argc == 3)
     tt_db_lsR(db, stdout);
   else{
-    for( int i = 2; i < argc; i++){
+    for( int i = 3; i < argc; i++){
+      fprintf(stderr, "%s:%d - lookup %s\n", __FILE__, __LINE__, argv[i]);
       tt_p_t* p = tt_db_find_project( db, argv[i]);
       if(p)
         tt_p_lsR( p, stdout);
@@ -113,19 +131,20 @@ const char* get_db_fname(void){
   return default_file;
 }
 
-void plain_ls(int argc, char** argv){
+void do_p_ls(int argc, char** argv){
   tt_db_t* db = NULL;
 
   db = tt_db_new();
   tt_db_read_file(db, get_db_fname());
 
-  if(argc == 2){
+  if(argc == 3){
+    
     for(int i = 0; i < db->nprojects; i++){
       printf("%s\n", db->projects[i]->name);
     }
   }
   else{
-    for( int i = 2; i < argc; i++){
+    for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p)
         tt_p_ls( p, stdout);
@@ -145,15 +164,15 @@ int main(int argc, char** argv){
   case help:
     pr_help(argv[0]);
     break;
-  case ls:
-    plain_ls(argc, argv);
+  case p_ls:
+    do_p_ls(argc, argv);
     break;
-  case lsr:
-    ls_r( argc, argv, get_db_fname());
+  case p_lsr:
+    do_p_lsr( argc, argv, get_db_fname());
     break;
-  case add:
+  case p_add:
     break;
-  case rm:
+  case p_rm:
     break;
   default:
     pr_help(argv[0]);

@@ -120,7 +120,6 @@ int tt_t_find_run(tt_t_t* task, tt_d_t* duration){
   if(!task || !duration)
     return -1;
   
-  fprintf(stderr,"%s:%d:   task->nruns: %d\n",__FILE__, __LINE__,  task->nruns);
   for(int i = 0; i < task->nruns; i++){
     if( 0 < tt_d_same_intervall( task->runs[i], duration))
       return i; 
@@ -183,7 +182,7 @@ int tt_t_stop_run(tt_t_t* task){
 /* list the runs of a given task */
 
 int tt_t_ls(tt_t_t* t, FILE* stream){
-  char buf1[26];
+  char buf1[26] = "N/A";
   char buf2[26] = "N/A";
   char* tmp = NULL;
 
@@ -192,24 +191,27 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
   if(NULL == stream)
     return -2;
   
-  if(0 == t->nruns)
+  if(0 == t->nruns){
+    fprintf(stderr, "%s:%d - no runs\n", __FILE__, __LINE__ );
     return 0;
-
+  }
   for( int i = 0; i < t->nruns; i++){
-    if( NULL == ctime_r(&(t->runs[i]->start), buf1))
-      return -3;
-    tmp = strchr(buf1, '\n');
-    *tmp = '\0';
-    
-    if( 0 != t->runs[i]->finished){
-      if( NULL == ctime_r(&(t->runs[i]->finished), buf2))
-        return -4;
-      tmp = strchr(buf2, '\n');
+    if( 0 != t->runs[i]->start){
+      if( NULL == ctime_r(&(t->runs[i]->start), buf1))
+        return -3;
+      tmp = strchr(buf1, '\n');
       *tmp = '\0';
+      
+      if( 0 != t->runs[i]->finished){
+        if( NULL == ctime_r(&(t->runs[i]->finished), buf2))
+        return -4;
+        tmp = strchr(buf2, '\n');
+        *tmp = '\0';
+      }
+      
+      if( 0> fprintf( stream, "%s -- %s\n", buf1, buf2))
+        return -5;
     }
-    
-    if( 0> fprintf( stream, "%s -- %s\n", buf1, buf2))
-      return -5;
   }
   return t->nruns;
 }
@@ -360,9 +362,10 @@ int tt_p_lsR(tt_p_t* p, FILE* stream){
     return -2;
 
    
-  if(0 == p->ntasks)
+  if(0 == p->ntasks){
+    fprintf(stderr, "%s:%d - no tasks\n", __FILE__, __LINE__ );
     return 0;
-
+  }
   for( int i = 0; i < p->ntasks; i++){
     if( 0 > fprintf( stream, "%s\n", p->tasklist[i]->name))
       return -3;
