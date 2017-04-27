@@ -44,7 +44,7 @@ tt_db_t* tt_db_update(tt_db_t* db, int fd);
 tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name);
 
 /* safe a task table, csv */
-int tt_write_file( tt_db_t* t, char* file_name);
+int tt_write_file( tt_db_t* t, const char* file_name);
 
 time_t tt_timegm(struct tm *tm);
 

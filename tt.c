@@ -312,6 +312,16 @@ tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname){
   return NULL;
 }
 
+/* find me a fresh task id. */
+unsigned int tt_db_new_taskid( tt_db_t* db){
+  return db->next_tskid++;
+}
+
+/* find me a fresh project id. */
+unsigned int tt_db_new_projectid( tt_db_t* db){
+  return db->next_prid++;
+}
+
 tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname){
   tt_p_t* p = NULL;
   for( int i = 0; i < db->nprojects; i++){
@@ -472,3 +482,26 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
   }
   return db->nprojects;
 }
+
+
+/* snip the project out, 
+   return it 
+   or return NULL if not found.
+*/
+tt_p_t* tt_db_rm_project(tt_db_t* db, const char* pname){
+  tt_p_t* p = NULL;
+  
+  for( int i = 0; i < db->nprojects; i++){
+    p = db->projects[i];
+    if( 0 == strcmp( p->name, pname)){
+      for(int j = i+1; j < db->nprojects; j++){
+        db->projects[i++] = db->projects[j];
+      }
+      --(db->nprojects);
+      return p;
+    }
+  }
+  return NULL;
+}
+
+

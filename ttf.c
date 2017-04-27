@@ -143,7 +143,7 @@ int parse_id(struct chunk* sc, char delim){
  
   if(*(sc->end) == '\0'){
     fprintf(stderr, "%s:%d: corrupt data\n", __FILE__, __LINE__);
- 
+    
     return -1;
   }
   *(sc->end) = (char) 0x0;
@@ -164,7 +164,7 @@ char* parse_name(struct chunk* sc, char delim){
 
 time_t parse_time(struct chunk* sc, char delim){
   struct tm stm;
-  fprintf(stderr, "%s:%d - %s\n", __FILE__, __LINE__, sc->start);
+  
   sc->end = tt_strdelim(sc->start, &(sc->cnt), delim, sc->esc);
    
   if(*(sc->end) == '\0'){
@@ -174,7 +174,7 @@ time_t parse_time(struct chunk* sc, char delim){
   *(sc->end) = (char) 0x0;
   if(sc->start != sc->end){
     strptime( sc->start, tt_time_format, &stm);
-    fprintf(stderr, "%s:%d - strptime called\n", __FILE__, __LINE__);
+    
   /* TODO: DST.
      The value specified in the tm_isdst field informs mktime()
      whether or not daylight saving time (DST) is in effect for the
@@ -204,6 +204,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
 
   /* project id */
   if( 0> (pid = parse_id(sc, sc->coldelim))){
+    fprintf(stderr, "%s:%d parse_id failed\n", __FILE__, __LINE__);
     return -1;
   }
   sc->start = (sc->end)+(sc->cnt)+1;
@@ -211,18 +212,21 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
    
   /* project name */
   if(NULL == (pname = parse_name(sc, sc->coldelim))){
+    fprintf(stderr, "%s:%d parse_name failed\n", __FILE__, __LINE__);
     return -2;
   }
   sc->start = (sc->end)+(sc->cnt)+1;
   
   /* task id */
   if( 0> (tid = parse_id(sc, sc->coldelim))){
+    fprintf(stderr, "%s:%d parse_id failed\n", __FILE__, __LINE__);
     return -3;
   }   
   sc->start = (sc->end)+(sc->cnt)+1;
  
   /* task name */
   if(NULL == (tname = parse_name(sc, sc->coldelim))){
+    fprintf(stderr, "%s:%d parse_name failed\n", __FILE__, __LINE__);
     return -4;
   }
   sc->start = (sc->end)+(sc->cnt)+1;
@@ -230,6 +234,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
   /* duration start */
     
   if(0 > (dstart = parse_time(sc, sc->coldelim))){
+    fprintf(stderr, "%s:%d parse_time failed\n", __FILE__, __LINE__);
     return -5;
   }
   
@@ -237,6 +242,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     
   /* duration end */
   if(0 > (dstop = parse_time(sc, sc->rowdelim))){
+    fprintf(stderr, "%s:%d parse_time failed\n", __FILE__, __LINE__);
     return -6;
   }
   sc->start = (sc->end)+(sc->cnt)+1;
@@ -253,6 +259,8 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     if(NULL == tmppr){
       tmppr = tt_p_new(pname);
       tt_p_setid(tmppr, pid);
+      if(db->next_prid <= pid)
+        db->next_prid = pid+1;/*FIXME: overflow*/
       tt_db_add_project(db,tmppr);
     }
   
@@ -260,14 +268,18 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     if(NULL == tmptsk){
       tmptsk = tt_t_new(tname);
       tt_t_setid(tmptsk, tid);
+      if(db->next_tskid <= tid)
+        db->next_tskid = tid+1;/*FIXME: overflow*/
       tt_p_add_task(tmppr,tmptsk);
     }
-    fprintf(stderr, "%s:%d - %d - %d\n", __FILE__, __LINE__, dstart, dstop);
-    tmpd = tt_d_new(dstart, dstop);
-    if(0 >= tt_t_find_run(tmptsk, tmpd))
-      tt_t_add_run(tmptsk, tmpd);
-    else
-      tt_d_free(tmpd);
+    
+    if( dstart){
+      tmpd = tt_d_new(dstart, dstop);
+      if(0 >= tt_t_find_run(tmptsk, tmpd))
+        tt_t_add_run(tmptsk, tmpd);
+      else
+        tt_d_free(tmpd);
+    }
   }
   
   return 0;
@@ -286,12 +298,14 @@ tt_db_t* tt_db_update(tt_db_t* db, int fd){
 
     if( NULL == (buf = malloc(sizeof(char)*bl))){
       perror("malloc"); //?
+      lseek(fd, 0, SEEK_SET);
       return NULL;
     }
     
     if( 0 > (l = readfilebuf(&buf, &slen, bl, fd))){
       perror("readfilebuf");
       free(buf);
+      lseek(fd, 0, SEEK_SET);
       return NULL;
     }
    
@@ -304,14 +318,16 @@ tt_db_t* tt_db_update(tt_db_t* db, int fd){
 
     while((slen - 1) > nparsed){
       if( 0> parse_line(buf, db, &sc)){
+        perror("tt_db_update, parse_line");
         free(buf);
-        
+        lseek(fd, 0, SEEK_SET);
         return NULL;
       }
       nparsed = (sc.end - buf) + sc.cnt;
     }
     free(buf);
   }
+  lseek(fd, 0, SEEK_SET);
   return db;
 }
 
@@ -373,78 +389,43 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   
   rl = snprintf(buf, 32, "%d,", curpr->id);
   write(fd, buf, rl);
-  write(fd, ",", 1);
   esc_write(fd, curpr->name);
-  
-  /*write(fd, curpr->name, strlen(curpr->name));*/
-  /*TODO: test escaping. */
-  /* { */
-  /*   int j = 0; */
-  /*   int l =  strlen(curpr->name); */
-  /*   while( j < l){ */
-  /*     int i = 0; */
-  /*     while(i < 31 && j < l){ */
-  /*       switch(curpr->name[j]){ */
-  /*       case ',': */
-  /*       case '\\': */
-  /*         buf[i++] = '\\'; */
-  /*       default: */
-  /*         buf[i++] = curpr->name[j++]; */
-  /*         break; */
-  /*       } */
-  /*     } */
-  /*     write(fd,buf,32); */
-  /*   } */
-  /* } */
 
   write(fd, ",", 1);
   if(curtsk){
     rl = snprintf(buf, 32, "%d,", curtsk->id);
     write(fd, buf, rl);
-    write(fd, ",", 1);
     esc_write(fd, curtsk->name);
   }
   else{ /*empty fields*/
     write(fd, ",", 1);
   }
- 
-  
-  /* write(fd, curtsk->name, strlen(curtsk->name)); */
-  /*TODO: test escaping. */
-  /* { */
-  /*   int j = 0; */
-  /*   int l =  strlen(curtsk->name); */
-  /*   while( j < l){ */
-  /*     int i = 0; */
-  /*     while(i < 31 && j < l){ */
-  /*       switch(curtsk->name[j]){ */
-  /*       case ',': */
-  /*       case '\\': */
-  /*         buf[i++] = '\\'; */
-  /*       default: */
-  /*         buf[i++] = curtsk->name[j++]; */
-  /*         break; */
-  /*       } */
-  /*     } */
-  /*     write(fd,buf,32); */
-  /*   } */
-  /* }  */
+
   write(fd, ",", 1);
 
   if(d)
   { /* time_t to struct tm to string */
-    char buf[20]; /* strlen("2001-11-12 18:31:01") */
-    buf[0] = (char) 0x0;
-   
-    strftime(buf, 20, tt_time_format, gmtime( &(d->start)));
-    write(fd, buf, 20);
-    write(fd, ",", 1);
-    
-    strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
-    write(fd, buf, 20);
+    if(d->start){
+      char buf[20]; /* strlen("2001-11-12 18:31:01") */
+      buf[0] = (char) 0x0;
+      
+      strftime(buf, 20, tt_time_format, gmtime( &(d->start)));
+      buf[19] = ',';
+      write(fd, buf, 20);
+    }
+    else{
+      write(fd, ",\n", 2);
+    }
+    if(d->finished){
+      strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
+      buf[19] = '\n';
+      write(fd, buf, 20);
+    }
+    else
+      write(fd, "\n", 1);
   }
   else{
-    write(fd, ",", 1);
+    write(fd, ",\n", 2);
   }
   return 0; 
 }
@@ -474,10 +455,10 @@ int tt_p_tocsv( tt_p_t* p, int fd){
 /* safe a task table, csv 
    TODO: test.
 */
-int tt_write_file( tt_db_t* t, char* file_name){
+int tt_write_file( tt_db_t* d, const char* file_name){
   int fd;
   
-  if( NULL == t)
+  if( NULL == d)
     return -1;
 
   if(NULL == file_name)
@@ -489,21 +470,21 @@ int tt_write_file( tt_db_t* t, char* file_name){
   errno = 0;
 
   if( 0 > (fd = open( file_name, O_RDWR))){
-    perror("tt_db_write_file");
+    perror("tt_db_write_file, open");
     return -3;
   }
   if( 0 > (flock( fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
-    perror("tt_db_write_file");
+    perror("tt_db_write_file, flock");
     return -4;
   }
 
-  if( NULL == tt_db_update(t, fd)){
-    perror("tt_db_write_file");
+  if( NULL == tt_db_update(d, fd)){
+    perror("tt_db_write_file, update");
     return -5;
   }
   
-  for( int i =  0; i < t->nprojects; i++){
-    tt_p_tocsv( t->projects[i], fd);
+  for( int i =  0; i < d->nprojects; i++){
+    tt_p_tocsv( d->projects[i], fd);
   }
   close(fd);
   return 0;

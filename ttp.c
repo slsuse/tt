@@ -45,8 +45,11 @@ args_t args(int argc, char** argv){
       if(0 == strcmp("lsr", argv[2]))
         return p_lsr;
   
-      if(0 == strcmp("add", argv[2]))
+      if(0 == strcmp("add", argv[2])){
+        if(argc < 4)
+          return help;
         return p_add;
+      }
       
       if(0 == strcmp("rm", argv[2]))
         return p_rm;
@@ -106,7 +109,7 @@ void do_p_lsr(int argc, char** argv, const char* fname){
     tt_db_lsR(db, stdout);
   else{
     for( int i = 3; i < argc; i++){
-      fprintf(stderr, "%s:%d - lookup %s\n", __FILE__, __LINE__, argv[i]);
+      
       tt_p_t* p = tt_db_find_project( db, argv[i]);
       if(p)
         tt_p_lsR( p, stdout);
@@ -156,9 +159,43 @@ void do_p_ls(int argc, char** argv){
 }
 
 
+void do_add_p(int argc, char** argv){
+  tt_db_t* db = NULL;
+  tt_p_t* p = NULL;
+  
+  db = tt_db_new();
+  tt_db_read_file(db, get_db_fname());
+  /*TODO: error handling */
+  for( int i = 3; i < argc; i++){
+    if(NULL == tt_db_find_project(db,argv[i])){
+      p = tt_p_new(argv[i]);
+      tt_db_add_project(db,p);
+    }
+  }
+  tt_write_file(db, get_db_fname());
+  tt_db_free(db);
+}
+
+void do_rm_p(int argc, char** argv){
+  tt_db_t* db = NULL;
+  tt_p_t* p = NULL;
+  
+  db = tt_db_new();
+  tt_db_read_file(db, get_db_fname());
+  /*TODO: error handling */
+  for( int i = 3; i < argc; i++){
+    p = tt_db_rm_project(db, argv[i]);
+    tt_p_free(p);
+  }
+  tt_write_file(db, get_db_fname());
+  tt_db_free(db);
+}
+
+
+
 int main(int argc, char** argv){
     
-  fprintf(stderr, "%s: %d\n", "argc", argc);
+  
 
   switch(args(argc, argv)){
   case help:
@@ -171,8 +208,10 @@ int main(int argc, char** argv){
     do_p_lsr( argc, argv, get_db_fname());
     break;
   case p_add:
+    do_add_p(argc, argv);
     break;
   case p_rm:
+    do_rm_p(argc,argv);
     break;
   default:
     pr_help(argv[0]);
