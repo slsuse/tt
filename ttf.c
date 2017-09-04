@@ -286,8 +286,13 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
 }
 
 
-tt_db_t* tt_db_update(tt_db_t* db, int fd){
-  errno = 0;   
+tt_db_t* tt_db_update(tt_db_t* db){
+  errno = 0;
+  
+#ifdef DEBUG
+    fprintf(stderr,"%s:%d:  tt_db_update.\n",__FILE__, __LINE__);
+#endif
+
   {
     char* buf = NULL;
     int bl = 128;
@@ -298,14 +303,14 @@ tt_db_t* tt_db_update(tt_db_t* db, int fd){
 
     if( NULL == (buf = malloc(sizeof(char)*bl))){
       perror("malloc"); //?
-      lseek(fd, 0, SEEK_SET);
+      lseek(db->fd, 0, SEEK_SET);
       return NULL;
     }
     
-    if( 0 > (l = readfilebuf(&buf, &slen, bl, fd))){
+    if( 0 > (l = readfilebuf(&buf, &slen, bl, db->fd))){
       perror("readfilebuf");
       free(buf);
-      lseek(fd, 0, SEEK_SET);
+      lseek(db->fd, 0, SEEK_SET);
       return NULL;
     }
    
@@ -320,38 +325,41 @@ tt_db_t* tt_db_update(tt_db_t* db, int fd){
       if( 0> parse_line(buf, db, &sc)){
         perror("tt_db_update, parse_line");
         free(buf);
-        lseek(fd, 0, SEEK_SET);
+        lseek(db->fd, 0, SEEK_SET);
         return NULL;
       }
       nparsed = (sc.end - buf) + sc.cnt;
     }
     free(buf);
   }
-  lseek(fd, 0, SEEK_SET);
+  lseek(db->fd, 0, SEEK_SET);
   return db;
 }
 
+/* read and flock a file.
+   Don't close it. Hold handle and lock.
+*/
 tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
   tt_db_t* ret = NULL;
-  int fd = -1;
   errno = 0;
   
-  if( 0 > (fd = open( file_name, O_RDONLY))){
+  if( 0 > (db->fd = open( file_name, O_RDONLY))){
     perror("tt_db_read_file");
     return NULL;
   }
-  if( 0 > (flock( fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
+  if( 0 > (flock( db->fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
     perror("tt_db_read_file");
     return NULL;
   }
 
-  ret = tt_db_update(db, fd);
-  
+  ret = tt_db_update(db);
+  /*
   if(0 != close(fd)){
     perror("close");
-    
+  
     return NULL;
   }
+  */
   return ret;
 }
 
@@ -452,40 +460,53 @@ int tt_p_tocsv( tt_p_t* p, int fd){
   return 0;
 }
 
-/* safe a task table, csv 
+
+/* safe a task table to csv in d->fd,
+   close file, releasing flock.
    TODO: test.
 */
-int tt_write_file( tt_db_t* d, const char* file_name){
-  int fd;
-  
-  if( NULL == d)
-    return -1;
-
-  if(NULL == file_name)
-    return -2;
-  
-  /* TODO: error handling
-   */
-
+int tt_db_write_file( tt_db_t* d){
   errno = 0;
-
-  if( 0 > (fd = open( file_name, O_RDWR))){
-    perror("tt_db_write_file, open");
-    return -3;
-  }
-  if( 0 > (flock( fd, LOCK_EX))){ //TODO: is lockf(fd,op,0) better?
-    perror("tt_db_write_file, flock");
-    return -4;
-  }
-
-  if( NULL == tt_db_update(d, fd)){
-    perror("tt_db_write_file, update");
-    return -5;
-  }
+  off_t offset;
   
+  /* BUG: RM_NOOP
+     no-ops the effect of removing items.
+
+     TODO:
+     Rewrite concurrency. 
+     If we delete a project, but a different process adds that project,
+     we have a race condition. If we respect a potential other process' add,
+     we can't remove the item at all.
+
+     _Problem_No.1_ is the faulty file locking. 
+     The file must be locked over the complete life time of the process.
+     Higher granularity breaks atomicity here, duh?
+
+     The_2nd_problem is user expectation and scripting: 
+     - Process A adds a project, 
+     - process B removes that project, 
+     - then A wants to clock in a task for the project.
+
+     _Problem_No.3_ is a stupid bug again.
+     - forgot to ftruncate file after writing out a reduced db.
+  */
+
+  
+#ifdef DEBUG
+    fprintf(stderr,"%s:%d:   attempting to write db.\n",__FILE__, __LINE__);
+#endif
+
   for( int i =  0; i < d->nprojects; i++){
-    tt_p_tocsv( d->projects[i], fd);
+    
+#ifdef DEBUG
+    fprintf(stderr,"%s:%d:   writing project no.%d.\n",__FILE__, __LINE__, i);
+#endif
+
+    tt_p_tocsv( d->projects[i], d->fd);
   }
-  close(fd);
+  /* retrieve current filepos, truncate*/
+  offset = lseek(d->fd, 0, SEEK_CUR);
+  ftruncate(d->fd, offset);
+  close(d->fd);
   return 0;
 }

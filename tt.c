@@ -488,13 +488,32 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
    return it 
    or return NULL if not found.
 */
+/* BUG: RM_NOOP
+     removing items from the db doesn't work.
+*/
 tt_p_t* tt_db_rm_project(tt_db_t* db, const char* pname){
   tt_p_t* p = NULL;
+
+#ifdef DEBUG
+  fprintf(stderr,"%s:%d:   tt_db_rm_project(db '%s')\n",__FILE__, __LINE__, pname);
+#endif
   
   for( int i = 0; i < db->nprojects; i++){
     p = db->projects[i];
     if( 0 == strcmp( p->name, pname)){
+
+#ifdef DEBUG
+      fprintf(stderr,"%s:%d:   pr '%s' FOUND\n",__FILE__, __LINE__, pname);
+#endif
+      
+      db->projects[i] = NULL;
+      
       for(int j = i+1; j < db->nprojects; j++){
+
+#ifdef DEBUG
+        fprintf(stderr,"%s:%d:   db->projects[%d] = db->projects[%d]\n",__FILE__, __LINE__, i, j);
+#endif
+
         db->projects[i++] = db->projects[j];
       }
       --(db->nprojects);

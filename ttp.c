@@ -96,15 +96,14 @@ void pr_help(const char* name){
   printf(" -t add <project> <task> [<task2> <task3> ...]\n");
   printf("                                    - register tasks in a project.\n");
  
+
+  printf(" -t rm <project> <task> [<task2> <task3> ...]\n");
+  printf("                                    - remove tasks from a project.\n");
+ 
             
 }
 
-void do_p_lsr(int argc, char** argv, const char* fname){
-  tt_db_t* db = NULL;
-  
-  db = tt_db_new();
-  tt_db_read_file(db, fname);
-
+void do_p_lsr(int argc, char** argv, tt_db_t* db){
   if(argc == 3)
     tt_db_lsR(db, stdout);
   else{
@@ -117,7 +116,6 @@ void do_p_lsr(int argc, char** argv, const char* fname){
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
     }
   }
-  tt_db_free(db);
 }
 
 /* WARNING: see man 3 getenv! */
@@ -134,12 +132,7 @@ const char* get_db_fname(void){
   return default_file;
 }
 
-void do_p_ls(int argc, char** argv){
-  tt_db_t* db = NULL;
-
-  db = tt_db_new();
-  tt_db_read_file(db, get_db_fname());
-
+void do_p_ls(int argc, char** argv, tt_db_t* db){
   if(argc == 3){
     
     for(int i = 0; i < db->nprojects; i++){
@@ -155,16 +148,13 @@ void do_p_ls(int argc, char** argv){
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
     }
   }
-  tt_db_free(db);
 }
 
 
-void do_add_p(int argc, char** argv){
-  tt_db_t* db = NULL;
+void do_add_p(int argc, char** argv, tt_db_t* db){
+
   tt_p_t* p = NULL;
   
-  db = tt_db_new();
-  tt_db_read_file(db, get_db_fname());
   /*TODO: error handling */
   for( int i = 3; i < argc; i++){
     if(NULL == tt_db_find_project(db,argv[i])){
@@ -172,29 +162,42 @@ void do_add_p(int argc, char** argv){
       tt_db_add_project(db,p);
     }
   }
-  tt_write_file(db, get_db_fname());
-  tt_db_free(db);
+  
 }
 
-void do_rm_p(int argc, char** argv){
-  tt_db_t* db = NULL;
+void do_rm_p(int argc, char** argv, tt_db_t* db){
   tt_p_t* p = NULL;
   
-  db = tt_db_new();
-  tt_db_read_file(db, get_db_fname());
-  /*TODO: error handling */
+#ifdef DEBUG
+  fprintf(stderr,"%s:%d:   remove pr '%s'\n",__FILE__, __LINE__, argv[3]);
+#endif
+
   for( int i = 3; i < argc; i++){
+
+#ifdef DEBUG
+    fprintf(stderr,"%s:%d:   tt_db_rm_project(db '%s')\n",__FILE__, __LINE__, argv[i]);
+#endif
+
     p = tt_db_rm_project(db, argv[i]);
+
+#ifdef DEBUG
+    if(NULL == p)
+      fprintf(stderr,"%s:%d:   pr '%s' not found!\n",__FILE__, __LINE__, argv[i]);
+#endif
+
     tt_p_free(p);
   }
-  tt_write_file(db, get_db_fname());
-  tt_db_free(db);
+
 }
 
 
 
 int main(int argc, char** argv){
-    
+  const char* dbfile = get_db_fname();
+  tt_db_t* db = NULL;
+  
+  db = tt_db_new();
+  tt_db_read_file(db, dbfile);
   
 
   switch(args(argc, argv)){
@@ -202,21 +205,24 @@ int main(int argc, char** argv){
     pr_help(argv[0]);
     break;
   case p_ls:
-    do_p_ls(argc, argv);
+    do_p_ls(argc, argv, db);
     break;
   case p_lsr:
-    do_p_lsr( argc, argv, get_db_fname());
+    do_p_lsr( argc, argv, db);
     break;
   case p_add:
-    do_add_p(argc, argv);
+    do_add_p(argc, argv, db);
     break;
   case p_rm:
-    do_rm_p(argc,argv);
+    do_rm_p(argc,argv, db);
     break;
   default:
     pr_help(argv[0]);
     break;
   }
 
+  
+  tt_db_write_file(db);
+  tt_db_free(db);
   return 0;
 }

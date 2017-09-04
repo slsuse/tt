@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define TT_BUF_LEN 2
+#define DEBUG 1
 
 /** When working on a task 
     start and stop the time for this task.
@@ -49,8 +50,9 @@ typedef struct tt_project_struct{
     they have been worked on.
 */
 typedef struct tt_db_struct{
+  int fd; /* file descriptor for open and locked data file */
   tt_p_t** projects; /* an array of projects*/
-  unsigned nprojects; /* The number of registered projects, index of NULL terminator */
+  unsigned nprojects; /* The number of registered projects*/
   unsigned len; /* current len of the array 'projects'. */
   unsigned int next_tskid; /* next available task id */
   unsigned int next_prid; /* next available project id */

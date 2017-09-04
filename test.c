@@ -187,23 +187,23 @@ tt_t_t* db_find_task( tt_db_t* db, const char* pname, const char* tname){
 int db_add_run( tt_db_t* db, unsigned int pid, unsigned int tid, tt_d_t* run){
   tt_p_t* p = NULL;
   tt_t_t* t = NULL;
-
+  
   for( int i = 0; i < db->nprojects; i++){
     if( db->projects[i]->id == pid){
       p = db->projects[i];
       for( int j = 0; j < p->ntasks; j++){
-
-	if( p->tasklist[i]->id == tid){
-	  t = p->tasklist[i];
-	  tt_t_add_run(t, run);
-	  return 0;
-	}
-	/* TODO: clean up or delete.
-	  create new task and project? Without names? Really?
-	*/
-	else{
-	  return -1; /* not found */
-	}
+        
+        if( p->tasklist[i]->id == tid){
+          t = p->tasklist[i];
+          tt_t_add_run(t, run);
+          return 0;
+        }
+        /* TODO: clean up or delete.
+           create new task and project? Without names? Really?
+        */
+        else{
+          return -1; /* not found */
+        }
       }
     }
     else{

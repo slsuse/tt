@@ -40,11 +40,11 @@ time_t parse_time(struct chunk *sc, char delim);
 int parse_line(char* buf, tt_db_t* db, struct chunk* sc);
 
 /* read and parse, updating db */
-tt_db_t* tt_db_update(tt_db_t* db, int fd);
+tt_db_t* tt_db_update(tt_db_t* db);
 tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name);
 
 /* safe a task table, csv */
-int tt_write_file( tt_db_t* t, const char* file_name);
+int tt_db_write_file( tt_db_t* d);
 
 time_t tt_timegm(struct tm *tm);
 
