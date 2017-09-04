@@ -343,7 +343,7 @@ tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
   tt_db_t* ret = NULL;
   errno = 0;
   
-  if( 0 > (db->fd = open( file_name, O_RDONLY))){
+  if( 0 > (db->fd = open( file_name, O_RDWR))){
     perror("tt_db_read_file");
     return NULL;
   }
