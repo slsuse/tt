@@ -9,9 +9,12 @@
 5. Parallel tasks and projects, e.g clocked in waiting for a phone call and
    clocked in producing bugs for tt while clocked in at work.
 6. KISS principle: UNIX command line interface and plain text files (csv).
+7. NFS save.
 
 ## TODO
 
-1. ttfs - filesystem interface, preferably csv. Safe concurrent file access.
-2. ttcfg - configuration, environment, arguments.
-3. cli frontends - create, list, switch tasks, projects. Clock in/out tasks.
+  * All of it.
+
+## Usage:
+
+TT_DB="test.csv"  ./ttp -p ls

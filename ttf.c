@@ -288,10 +288,6 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
 
 tt_db_t* tt_db_update(tt_db_t* db){
   errno = 0;
-  
-#ifdef DEBUG
-    fprintf(stderr,"%s:%d:  tt_db_update.\n",__FILE__, __LINE__);
-#endif
 
   {
     char* buf = NULL;
@@ -469,39 +465,7 @@ int tt_db_write_file( tt_db_t* d){
   errno = 0;
   off_t offset;
   
-  /* BUG: RM_NOOP
-     no-ops the effect of removing items.
-
-     TODO:
-     Rewrite concurrency. 
-     If we delete a project, but a different process adds that project,
-     we have a race condition. If we respect a potential other process' add,
-     we can't remove the item at all.
-
-     _Problem_No.1_ is the faulty file locking. 
-     The file must be locked over the complete life time of the process.
-     Higher granularity breaks atomicity here, duh?
-
-     The_2nd_problem is user expectation and scripting: 
-     - Process A adds a project, 
-     - process B removes that project, 
-     - then A wants to clock in a task for the project.
-
-     _Problem_No.3_ is a stupid bug again.
-     - forgot to ftruncate file after writing out a reduced db.
-  */
-
-  
-#ifdef DEBUG
-    fprintf(stderr,"%s:%d:   attempting to write db.\n",__FILE__, __LINE__);
-#endif
-
   for( int i =  0; i < d->nprojects; i++){
-    
-#ifdef DEBUG
-    fprintf(stderr,"%s:%d:   writing project no.%d.\n",__FILE__, __LINE__, i);
-#endif
-
     tt_p_tocsv( d->projects[i], d->fd);
   }
   /* retrieve current filepos, truncate*/

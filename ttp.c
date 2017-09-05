@@ -216,6 +216,12 @@ int main(int argc, char** argv){
   case p_rm:
     do_rm_p(argc,argv, db);
     break;
+  case t_ls:
+  case t_add:
+  case t_rm:
+    fprintf(stderr, "%s:%d Not yet implemented.\n", __FILE__, __LINE__);
+    pr_help(argv[0]);
+    break;
   default:
     pr_help(argv[0]);
     break;
