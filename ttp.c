@@ -132,6 +132,9 @@ const char* get_db_fname(void){
   return default_file;
 }
 
+/* BUG: SEG_P_LS 
+   segfault when ./ttp -p ls testproject10 testproject-11 tt testproject05 testproject20
+ */
 void do_p_ls(int argc, char** argv, tt_db_t* db){
   if(argc == 3){
     
@@ -142,13 +145,40 @@ void do_p_ls(int argc, char** argv, tt_db_t* db){
   else{
     for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
-      if(p)
+      if(p){
+        printf("%s:\n", db->projects[i]->name);
         tt_p_ls( p, stdout);
+      }
       else
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
     }
   }
 }
+
+
+void do_t_ls(int argc, char** argv, tt_db_t* db){
+  if(argc>3){
+    /* ttp -t ls projectname taskname taskname ... */
+    tt_p_t* p = tt_db_find_project( db,argv[3]);
+    if(p){
+#ifdef DEBUG
+      fprintf(stderr, "%s:%d found project %s\n", __FILE__, __LINE__, argv[3]);
+#endif
+
+      for( int i = 4; i < argc; i++){
+#ifdef DEBUG
+        fprintf(stderr, "%s:%d looking up task %s\n", __FILE__, __LINE__, argv[i]);
+#endif
+        
+        tt_t_t* t = tt_p_find_task(p,argv[i]);          
+        tt_t_ls( t, stdout);
+      }
+    }
+    else
+      fprintf(stderr, "project '%s' not found.\n", argv[3]);
+  }
+}
+
 
 
 void do_add_p(int argc, char** argv, tt_db_t* db){
@@ -217,6 +247,8 @@ int main(int argc, char** argv){
     do_rm_p(argc,argv, db);
     break;
   case t_ls:
+    do_t_ls(argc, argv, db);
+    break;
   case t_add:
   case t_rm:
     fprintf(stderr, "%s:%d Not yet implemented.\n", __FILE__, __LINE__);

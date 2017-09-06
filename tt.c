@@ -488,9 +488,6 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
    return it 
    or return NULL if not found.
 */
-/* BUG: RM_NOOP
-     removing items from the db doesn't work.
-*/
 tt_p_t* tt_db_rm_project(tt_db_t* db, const char* pname){
   tt_p_t* p = NULL;
 

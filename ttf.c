@@ -334,6 +334,7 @@ tt_db_t* tt_db_update(tt_db_t* db){
 
 /* read and flock a file.
    Don't close it. Hold handle and lock.
+   WARN: might contain an off-by-1. See <(BUG: SEG_P_LS)>. 
 */
 tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
   tt_db_t* ret = NULL;
