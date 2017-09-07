@@ -216,7 +216,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     return -2;
   }
   sc->start = (sc->end)+(sc->cnt)+1;
-  
+
   /* task id */
   if( 0> (tid = parse_id(sc, sc->coldelim))){
     fprintf(stderr, "%s:%d parse_id failed\n", __FILE__, __LINE__);
@@ -281,7 +281,6 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
         tt_d_free(tmpd);
     }
   }
-  
   return 0;
 }
 
@@ -334,7 +333,6 @@ tt_db_t* tt_db_update(tt_db_t* db){
 
 /* read and flock a file.
    Don't close it. Hold handle and lock.
-   WARN: might contain an off-by-1. See <(BUG: SEG_P_LS)>. 
 */
 tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
   tt_db_t* ret = NULL;

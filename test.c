@@ -103,7 +103,7 @@ void test_p1(void){
   }
   /* tt_t_stop_run(t);*/
   printf("\nlsR:\n");
-  tt_p_lsR(p, stdout);
+  tt_p_lsr(p, stdout);
   tt_p_free(p);
 }
 

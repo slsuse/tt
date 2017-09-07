@@ -1,0 +1,39 @@
+;; -*- Mode: kotl -*- 
+"Kotl-4.0" ;; file-format
+
+   1. Tasks
+
+     1a. add task.
+
+     1b. ls tasks.
+
+     1c. rm tasks.
+
+     1d. start tasks.
+
+     1e. stop tasks.
+
+
+"ben" ;; kvspec:current
+11 ;; id-counter
+alpha ;; label-type
+4 ;; label-min-width
+". " ;; label-separator
+3 ;; level-indent
+
+;; depth-first kcell attributes
+[[0
+  (creator "sl@d244" create-time "20170904:-32:27:46" id-counter 11 file "/home/sl/Src/tt/TODO.kotl")]
+ [1
+  (creator "sl@d244" create-time "20170904:-32:27:46")]
+ [3
+  (creator "sl@d244" create-time "20170904:-32:31:56" no-fill t)]
+ [8
+  (creator "sl@d244" create-time "20170904:-32:33:46" no-fill t)]
+ [9
+  (creator "sl@d244" create-time "20170904:-32:33:52" no-fill t)]
+ [10
+  (creator "sl@d244" create-time "20170904:-32:33:52" no-fill t)]
+ [11
+  (creator "sl@d244" create-time "20170904:-32:34:00" no-fill t)]
+ nil nil nil nil nil]

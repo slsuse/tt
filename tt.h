@@ -137,6 +137,10 @@ unsigned int tt_db_new_projectid( tt_db_t* db);
 */
 int tt_p_add_task(tt_p_t* project, tt_t_t* task);
 
+/* remove first task named tname from tasklist, 
+   return it or NULL otherwise */
+tt_t_t* tt_p_rm_task(tt_p_t* p, const char* tname);
+
 tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname);
 
 /* snip the project out, 
@@ -154,7 +158,7 @@ tt_t_t* tt_db_find_task(tt_db_t* db, const char* pname, const char* tname);
 int tt_p_ls(tt_p_t* p, FILE* stream);
 
 /* list all tasks of a given project recursively */
-int tt_p_lsR(tt_p_t* p, FILE* stream);
+int tt_p_lsr(tt_p_t* p, FILE* stream);
 
 /* malloc a tt_db_struct.
    return NULL on error.

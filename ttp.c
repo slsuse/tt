@@ -14,7 +14,9 @@ typedef enum args{
   p_rm,
   t_ls,
   t_add,
-  t_rm
+  t_rm,
+  t_start,
+  t_stop
 } args_t;
 
 args_t args(int argc, char** argv){
@@ -67,6 +69,25 @@ args_t args(int argc, char** argv){
       
       if(0 == strcmp("rm", argv[2]))
         return t_rm;
+      
+      if(0 == strcmp("start", argv[2]))
+        return t_rm;
+
+      if(0 == strcmp("b", argv[2]))
+        return t_start;
+
+      if(0 == strcmp("begin", argv[2]))
+        return t_start;
+
+      if(0 == strcmp("stop", argv[2]))
+        return t_stop;
+
+      if(0 == strcmp("e", argv[2]))
+        return t_stop;
+
+      if(0 == strcmp("end", argv[2]))
+        return t_stop;
+
     }
   }
   return help;
@@ -104,14 +125,17 @@ void pr_help(const char* name){
 }
 
 void do_p_lsr(int argc, char** argv, tt_db_t* db){
-  if(argc == 3)
+  if(argc == 3){
     tt_db_lsR(db, stdout);
+  }
   else{
     for( int i = 3; i < argc; i++){
       
       tt_p_t* p = tt_db_find_project( db, argv[i]);
-      if(p)
-        tt_p_lsR( p, stdout);
+      if(p){
+        printf("%s:\n", p->name);
+        tt_p_lsr( p, stdout);
+      }
       else
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
     }
@@ -132,9 +156,6 @@ const char* get_db_fname(void){
   return default_file;
 }
 
-/* BUG: SEG_P_LS 
-   segfault when ./ttp -p ls testproject10 testproject-11 tt testproject05 testproject20
- */
 void do_p_ls(int argc, char** argv, tt_db_t* db){
   if(argc == 3){
     
@@ -146,7 +167,7 @@ void do_p_ls(int argc, char** argv, tt_db_t* db){
     for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p){
-        printf("%s:\n", db->projects[i]->name);
+        printf("%s:\n", p->name);
         tt_p_ls( p, stdout);
       }
       else
@@ -164,14 +185,20 @@ void do_t_ls(int argc, char** argv, tt_db_t* db){
 #ifdef DEBUG
       fprintf(stderr, "%s:%d found project %s\n", __FILE__, __LINE__, argv[3]);
 #endif
+      printf("%s:\n", p->name);
 
-      for( int i = 4; i < argc; i++){
+      if(argc == 4){
+        tt_p_lsr(p, stdout);
+      }
+      else{
+        for( int i = 3; i < argc; i++){
 #ifdef DEBUG
-        fprintf(stderr, "%s:%d looking up task %s\n", __FILE__, __LINE__, argv[i]);
+          fprintf(stderr, "%s:%d looking up task %s\n", __FILE__, __LINE__, argv[i]);
 #endif
         
-        tt_t_t* t = tt_p_find_task(p,argv[i]);          
-        tt_t_ls( t, stdout);
+          tt_t_t* t = tt_p_find_task(p,argv[i]);          
+          tt_t_ls( t, stdout);
+        }
       }
     }
     else
@@ -220,7 +247,35 @@ void do_rm_p(int argc, char** argv, tt_db_t* db){
 
 }
 
+/*TODO error handling */
+void do_add_t(int argc, char** argv, tt_db_t* db){
+  tt_p_t* p = NULL;
+  tt_t_t* t = NULL;
+  
+  if(argc < 5)
+    return;
 
+  if( NULL == (p = tt_db_find_project(db,argv[3]))){
+    p = tt_p_new(argv[3]);
+    tt_db_add_project(db,p);
+  }
+  if(NULL == (t = tt_p_find_task(p,argv[4]))){
+    t = tt_t_new(argv[4]);
+    tt_p_add_task(p,t);
+  }
+}
+
+void do_rm_t( int argc, char** argv, tt_db_t* db){
+  tt_p_t* p = NULL;
+ 
+  if(argc < 5)
+    return;
+  
+  p = tt_db_find_project(db,argv[3]);
+  if(p)
+    tt_p_rm_task(p,argv[4]);
+  
+}
 
 int main(int argc, char** argv){
   const char* dbfile = get_db_fname();
@@ -250,9 +305,10 @@ int main(int argc, char** argv){
     do_t_ls(argc, argv, db);
     break;
   case t_add:
+    do_add_t(argc, argv, db);
+    break;
   case t_rm:
-    fprintf(stderr, "%s:%d Not yet implemented.\n", __FILE__, __LINE__);
-    pr_help(argv[0]);
+    do_rm_t(argc, argv, db);
     break;
   default:
     pr_help(argv[0]);

@@ -192,7 +192,7 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
     return -2;
   
   if(0 == t->nruns){
-    fprintf(stderr, "%s:%d - no runs\n", __FILE__, __LINE__ );
+    /*    fprintf(stderr, "%s:%d - no runs\n", __FILE__, __LINE__ );*/
     return 0;
   }
   for( int i = 0; i < t->nruns; i++){
@@ -301,6 +301,27 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task){
   return ret;
 }
 
+/* remove first task named tname from tasklist, 
+   return it or NULL otherwise */
+tt_t_t* tt_p_rm_task(tt_p_t* p, const char* tname){
+  tt_t_t* t = NULL;
+
+  for( int i = 0; i < p->ntasks; i++){
+    t = p->tasklist[i];
+    if( 0 == strcmp( t->name, tname)){
+      p->tasklist[i] = NULL;
+      
+      for(int j = i+1; j < p->ntasks; j++){
+        p->tasklist[i++] = p->tasklist[j];
+      }
+      --(p->ntasks);
+      return t;
+    }
+  }
+  return NULL;
+}
+
+
 tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname){
   tt_t_t* t = NULL;
   for( int i = 0; i < p->ntasks; i++){
@@ -365,7 +386,7 @@ int tt_p_ls(tt_p_t* p, FILE* stream){
 
 
 /* list all tasks of a given project recursively */
-int tt_p_lsR(tt_p_t* p, FILE* stream){
+int tt_p_lsr(tt_p_t* p, FILE* stream){
   if( NULL ==  p)
     return -1;
   if(NULL == stream)
@@ -373,7 +394,7 @@ int tt_p_lsR(tt_p_t* p, FILE* stream){
 
    
   if(0 == p->ntasks){
-    fprintf(stderr, "%s:%d - no tasks\n", __FILE__, __LINE__ );
+    /* fprintf(stderr, "%s:%d - no tasks\n", __FILE__, __LINE__ );*/
     return 0;
   }
   for( int i = 0; i < p->ntasks; i++){
@@ -475,9 +496,9 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
     return 0;
 
   for( int i = 0; i < db->nprojects; i++){
-    if( 0 > fprintf( stream, "%s\n", db->projects[i]->name))
+    if( 0 > fprintf( stream, "%s:\n", db->projects[i]->name))
       return -3;
-    if( 0 > tt_p_lsR(db->projects[i], stream))
+    if( 0 > tt_p_lsr(db->projects[i], stream))
       return -4;
   }
   return db->nprojects;
