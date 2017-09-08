@@ -276,6 +276,18 @@ void do_rm_t( int argc, char** argv, tt_db_t* db){
     tt_p_rm_task(p,argv[4]);
   
 }
+void do_start_t(int argc, char** argv, tt_db_t* db){
+  tt_t_t* t =NULL;
+  t = tt_db_find_task(db,argv[3],argv[4]);
+  if(t)
+    tt_t_start_run(t);
+}
+void do_stop_t(int argc, char** argv, tt_db_t* db){
+  tt_t_t* t =NULL;
+  t = tt_db_find_task(db,argv[3],argv[4]);
+  if(t)
+    tt_t_stop_run(t);
+}
 
 int main(int argc, char** argv){
   const char* dbfile = get_db_fname();
@@ -309,6 +321,12 @@ int main(int argc, char** argv){
     break;
   case t_rm:
     do_rm_t(argc, argv, db);
+    break;
+  case t_start:
+    do_start_t(argc, argv, db);
+    break;
+  case t_stop:
+    do_stop_t(argc, argv, db);
     break;
   default:
     pr_help(argv[0]);

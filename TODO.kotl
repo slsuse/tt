@@ -3,15 +3,15 @@
 
    1. Tasks
 
-     1a. add task.
+     1a. add task. -done.
 
-     1b. ls tasks.
+     1b. ls tasks. -done.
 
-     1c. rm tasks.
+     1c. rm tasks. -done.
 
-     1d. start tasks.
+     1d. start tasks. -done.
 
-     1e. stop tasks.
+     1e. stop tasks. -done.
 
 
 "ben" ;; kvspec:current
@@ -23,7 +23,7 @@ alpha ;; label-type
 
 ;; depth-first kcell attributes
 [[0
-  (creator "sl@d244" create-time "20170904:-32:27:46" id-counter 11 file "/home/sl/Src/tt/TODO.kotl")]
+  (creator "sl@d244" create-time "20170907:-35:31:49" id-counter 11 file "/home/sl/Src/tt/TODO.kotl")]
  [1
   (creator "sl@d244" create-time "20170904:-32:27:46")]
  [3
