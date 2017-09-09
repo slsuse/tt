@@ -71,7 +71,7 @@ args_t args(int argc, char** argv){
         return t_rm;
       
       if(0 == strcmp("start", argv[2]))
-        return t_rm;
+        return t_start;
 
       if(0 == strcmp("b", argv[2]))
         return t_start;
@@ -278,12 +278,20 @@ void do_rm_t( int argc, char** argv, tt_db_t* db){
 }
 void do_start_t(int argc, char** argv, tt_db_t* db){
   tt_t_t* t =NULL;
+  if(argc < 5){
+    pr_help(argv[0]);
+    return;
+  }
   t = tt_db_find_task(db,argv[3],argv[4]);
   if(t)
     tt_t_start_run(t);
 }
 void do_stop_t(int argc, char** argv, tt_db_t* db){
   tt_t_t* t =NULL;
+  if(argc < 5){
+    pr_help(argv[0]);
+    return;
+  }
   t = tt_db_find_task(db,argv[3],argv[4]);
   if(t)
     tt_t_stop_run(t);

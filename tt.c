@@ -324,6 +324,14 @@ tt_t_t* tt_p_rm_task(tt_p_t* p, const char* tname){
 
 tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname){
   tt_t_t* t = NULL;
+  if(NULL == p){
+    fprintf(stderr, "%s:%d NULL pointer in tt_p_find_task!\n", __FILE__, __LINE__);
+    return NULL;
+  }
+  if(NULL == tname){
+    fprintf(stderr, "%s:%d NULL pointer in tt_p_find_task!\n", __FILE__, __LINE__);
+    return NULL;
+  }
   for( int i = 0; i < p->ntasks; i++){
     t = p->tasklist[i];
     if( 0 == strcmp( t->name, tname)){
@@ -358,7 +366,19 @@ tt_t_t* tt_db_find_task(tt_db_t* db,
 			const char* pname,
 			const char* tname){
   tt_p_t* p = NULL;
-
+  if(NULL == db){
+    fprintf(stderr, "%s:%d NULL pointer in tt_db_find_task!\n", __FILE__, __LINE__);
+    return NULL;
+  }
+  if(NULL == pname){
+    fprintf(stderr, "%s:%d NULL pointer in tt_db_find_task!\n", __FILE__, __LINE__);
+    return NULL;
+  }
+  if(NULL == tname){
+    fprintf(stderr, "%s:%d NULL pointer in tt_db_find_task!\n", __FILE__, __LINE__);
+    return NULL;
+  }
+  
   if( NULL != (p = tt_db_find_project(db, pname))){
     return tt_p_find_task(p, tname);
   }
