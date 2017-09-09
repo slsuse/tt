@@ -22,7 +22,8 @@ void tt_d_free(tt_d_t* d){
     free(d);
 }
 
-
+/* Bug: Issue #12
+ */
 time_t tt_d_start(tt_d_t* d){
   if(NULL == d)
     return 0;
@@ -30,6 +31,8 @@ time_t tt_d_start(tt_d_t* d){
   return time(&(d->start));
 }
 
+/* Bug: Issue #12
+ */
 time_t tt_d_stop(tt_d_t* d){
   if(NULL == d)
     return 0;
@@ -176,7 +179,7 @@ int tt_t_stop_run(tt_t_t* task){
   if(0 == task->len)
     return -4;
 
-  return  task->runs[task->nruns - 1]->finished = time(NULL);
+  return task->runs[task->nruns - 1]->finished = time(NULL);
 }
 
 /* list the runs of a given task */

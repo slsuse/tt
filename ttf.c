@@ -385,6 +385,9 @@ void esc_write(int fd, const char* s){
 }
 
 /* TODO:  error checking. 
+   Bug: Issue #12
+   https://github.com/slsuse/tt/issues/12
+   code looks sane.
 */
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   char buf[32];
@@ -411,8 +414,14 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
     if(d->start){
       char buf[20]; /* strlen("2001-11-12 18:31:01") */
       buf[0] = (char) 0x0;
-      
+
       strftime(buf, 20, tt_time_format, gmtime( &(d->start)));
+
+#ifdef DEBUG
+      buf[19] = 0x0;
+      fprintf(stderr, "%s:%d writing start timestamp '%s'\n", __FILE__, __LINE__, buf);
+#endif
+
       buf[19] = ',';
       write(fd, buf, 20);
     }
@@ -421,6 +430,12 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
     }
     if(d->finished){
       strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
+
+#ifdef DEBUG
+      buf[19] = 0x0;
+      fprintf(stderr, "%s:%d writing stop timestamp '%s'\n", __FILE__, __LINE__, buf);
+#endif
+
       buf[19] = '\n';
       write(fd, buf, 20);
     }
@@ -459,6 +474,8 @@ int tt_p_tocsv( tt_p_t* p, int fd){
 /* safe a task table to csv in d->fd,
    close file, releasing flock.
    TODO: test.
+   Bug: Issue #12.
+   https://github.com/slsuse/tt/issues/12
 */
 int tt_db_write_file( tt_db_t* d){
   errno = 0;

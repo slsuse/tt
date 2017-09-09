@@ -265,6 +265,8 @@ void do_add_t(int argc, char** argv, tt_db_t* db){
   }
 }
 
+
+/*Bug: stoping a task creates phantasy entry. */
 void do_rm_t( int argc, char** argv, tt_db_t* db){
   tt_p_t* p = NULL;
  
@@ -276,25 +278,49 @@ void do_rm_t( int argc, char** argv, tt_db_t* db){
     tt_p_rm_task(p,argv[4]);
   
 }
+
+/*Bug: Issue #12, starting a task creates phantasy entry. 
+  https://github.com/slsuse/tt/issues/12
+ */
 void do_start_t(int argc, char** argv, tt_db_t* db){
-  tt_t_t* t =NULL;
+  tt_t_t* t = NULL;
+  tt_p_t* p = NULL;
+  int ts = -100;
+  
   if(argc < 5){
     pr_help(argv[0]);
     return;
   }
+
   t = tt_db_find_task(db,argv[3],argv[4]);
-  if(t)
-    tt_t_start_run(t);
+  if(NULL == t){
+    t = tt_t_new(argv[4]);
+
+    p = tt_db_find_project(db,argv[3]);
+    if(NULL == p){
+      p = tt_p_new(argv[3]);
+      tt_db_add_project(db,p);
+    }
+    tt_p_add_task(p,t);
+  }
+  if(0 > (ts = tt_t_start_run(t)))
+    fprintf(stderr, "%s:%d error setting timestamp: %d\n", __FILE__, __LINE__, ts);
 }
+
+
 void do_stop_t(int argc, char** argv, tt_db_t* db){
   tt_t_t* t =NULL;
+  int ts = -100;
+   
   if(argc < 5){
     pr_help(argv[0]);
     return;
   }
   t = tt_db_find_task(db,argv[3],argv[4]);
-  if(t)
-    tt_t_stop_run(t);
+  if(t){
+    if(0 > (ts = tt_t_stop_run(t)))
+      fprintf(stderr, "%s:%d error setting timestamp: %d\n", __FILE__, __LINE__, ts);
+  }
 }
 
 int main(int argc, char** argv){
