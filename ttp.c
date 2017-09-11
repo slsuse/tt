@@ -182,22 +182,19 @@ void do_t_ls(int argc, char** argv, tt_db_t* db){
     /* ttp -t ls projectname taskname taskname ... */
     tt_p_t* p = tt_db_find_project( db,argv[3]);
     if(p){
-#ifdef DEBUG
-      fprintf(stderr, "%s:%d found project %s\n", __FILE__, __LINE__, argv[3]);
-#endif
       printf("%s:\n", p->name);
 
       if(argc == 4){
         tt_p_lsr(p, stdout);
       }
       else{
-        for( int i = 3; i < argc; i++){
-#ifdef DEBUG
-          fprintf(stderr, "%s:%d looking up task %s\n", __FILE__, __LINE__, argv[i]);
-#endif
-        
-          tt_t_t* t = tt_p_find_task(p,argv[i]);          
-          tt_t_ls( t, stdout);
+        for( int i = 4; i < argc; i++){
+          tt_t_t* t = tt_p_find_task(p,argv[i]);
+          if(t)
+            tt_t_ls( t, stdout);
+          else{
+            fprintf(stderr, "%s no such task\n", argv[i]);
+          }
         }
       }
     }
@@ -224,24 +221,8 @@ void do_add_p(int argc, char** argv, tt_db_t* db){
 
 void do_rm_p(int argc, char** argv, tt_db_t* db){
   tt_p_t* p = NULL;
-  
-#ifdef DEBUG
-  fprintf(stderr,"%s:%d:   remove pr '%s'\n",__FILE__, __LINE__, argv[3]);
-#endif
-
   for( int i = 3; i < argc; i++){
-
-#ifdef DEBUG
-    fprintf(stderr,"%s:%d:   tt_db_rm_project(db '%s')\n",__FILE__, __LINE__, argv[i]);
-#endif
-
     p = tt_db_rm_project(db, argv[i]);
-
-#ifdef DEBUG
-    if(NULL == p)
-      fprintf(stderr,"%s:%d:   pr '%s' not found!\n",__FILE__, __LINE__, argv[i]);
-#endif
-
     tt_p_free(p);
   }
 

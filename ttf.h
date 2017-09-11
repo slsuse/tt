@@ -46,8 +46,7 @@ tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name);
 /* safe a task table, csv */
 int tt_db_write_file( tt_db_t* d);
 
-time_t tt_timegm(struct tm *tm);
-
+time_t mktime_pain_in_the_ass(struct tm *tm);
 int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk);
 
 char* tt_strchar(char* buf, char delim);

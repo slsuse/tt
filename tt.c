@@ -183,7 +183,7 @@ int tt_t_stop_run(tt_t_t* task){
 }
 
 /* list the runs of a given task */
-
+/*FIXME: Issue #12 misbehaviour on finished == 0 */
 int tt_t_ls(tt_t_t* t, FILE* stream){
   char buf1[26] = "N/A";
   char buf2[26] = "N/A";
@@ -211,6 +211,8 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
         tmp = strchr(buf2, '\n');
         *tmp = '\0';
       }
+      else
+        strcpy(buf2, "N/A");
       
       if( 0> fprintf( stream, "%s -- %s\n", buf1, buf2))
         return -5;
@@ -535,26 +537,13 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
 tt_p_t* tt_db_rm_project(tt_db_t* db, const char* pname){
   tt_p_t* p = NULL;
 
-#ifdef DEBUG
-  fprintf(stderr,"%s:%d:   tt_db_rm_project(db '%s')\n",__FILE__, __LINE__, pname);
-#endif
-  
   for( int i = 0; i < db->nprojects; i++){
     p = db->projects[i];
     if( 0 == strcmp( p->name, pname)){
 
-#ifdef DEBUG
-      fprintf(stderr,"%s:%d:   pr '%s' FOUND\n",__FILE__, __LINE__, pname);
-#endif
-      
       db->projects[i] = NULL;
       
       for(int j = i+1; j < db->nprojects; j++){
-
-#ifdef DEBUG
-        fprintf(stderr,"%s:%d:   db->projects[%d] = db->projects[%d]\n",__FILE__, __LINE__, i, j);
-#endif
-
         db->projects[i++] = db->projects[j];
       }
       --(db->nprojects);

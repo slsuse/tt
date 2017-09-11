@@ -184,10 +184,57 @@ time_t parse_time(struct chunk* sc, char delim){
      system databases to) attempt to determine whether DST is in
      effect at the specified time.  */
     stm.tm_isdst = -1; /* FIXME: best solution is to register dst in the csv. */
-    return mktime(&stm);
+
+
+    /*    TODO: Maybe better this?
+          Function: time_t timegm (struct tm *BROKENTIME)
+          Preliminary: | MT-Safe env locale | AS-Unsafe heap lock |
+          AC-Unsafe lock mem fd | *Note POSIX Safety Concepts::.
+          
+          `timegm' is functionally identical to `mktime' except it always
+          takes the input values to be Coordinated Universal Time (UTC)
+          regardless of any local time zone setting.
+          
+          Note that `timegm' is the inverse of `gmtime'.
+          
+          *Portability note:*  `mktime' is essentially universally
+          available.  `timegm' is rather rare.  For the most portable
+          conversion from a UTC broken-down time to a simple time, set the
+          `TZ' environment variable to UTC, call `mktime', then set `TZ'
+          back.
+
+          => _This is a portability fuck up that sucks like a black hole._ 
+    */
+
+    /*return timegm(&stm);*/
+    /* return mktime(&stm);*/
+    return mktime_pain_in_the_ass(&stm);
   }
   else
     return 0;
+}
+
+time_t mktime_pain_in_the_ass(struct tm *tm){
+  time_t ret;
+  char *tz;
+
+  /* banding piles */
+  tz = getenv("TZ");
+  if (tz)
+    tz = strdup(tz);
+  setenv("TZ", "", 1);
+  tzset();
+
+  ret = mktime(tm);
+
+  /* electrocoagulation */
+  if (tz) {
+    setenv("TZ", tz, 1);
+    free(tz);
+  } else
+    unsetenv("TZ");
+  tzset();
+  return ret;
 }
 
 /* TODO: clean up.
@@ -237,7 +284,6 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     fprintf(stderr, "%s:%d parse_time failed\n", __FILE__, __LINE__);
     return -5;
   }
-  
   sc->start = (sc->end)+(sc->cnt)+1;
     
   /* duration end */
@@ -245,6 +291,7 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
     fprintf(stderr, "%s:%d parse_time failed\n", __FILE__, __LINE__);
     return -6;
   }
+
   sc->start = (sc->end)+(sc->cnt)+1;
    
   {
@@ -348,13 +395,6 @@ tt_db_t* tt_db_read_file( tt_db_t* db, const char* file_name){
   }
 
   ret = tt_db_update(db);
-  /*
-  if(0 != close(fd)){
-    perror("close");
-  
-    return NULL;
-  }
-  */
   return ret;
 }
 
@@ -415,12 +455,9 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
       char buf[20]; /* strlen("2001-11-12 18:31:01") */
       buf[0] = (char) 0x0;
 
+      /*TODO: gmtime uses UTC, localtime the local timezone */
       strftime(buf, 20, tt_time_format, gmtime( &(d->start)));
-
-#ifdef DEBUG
-      buf[19] = 0x0;
-      fprintf(stderr, "%s:%d writing start timestamp '%s'\n", __FILE__, __LINE__, buf);
-#endif
+      /* strftime(buf, 20, tt_time_format, localtime( &(d->start)));*/
 
       buf[19] = ',';
       write(fd, buf, 20);
@@ -430,11 +467,7 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
     }
     if(d->finished){
       strftime(buf, 20, tt_time_format, gmtime( &(d->finished)));
-
-#ifdef DEBUG
-      buf[19] = 0x0;
-      fprintf(stderr, "%s:%d writing stop timestamp '%s'\n", __FILE__, __LINE__, buf);
-#endif
+      /* strftime(buf, 20, tt_time_format, localtime( &(d->finished)));*/
 
       buf[19] = '\n';
       write(fd, buf, 20);
@@ -448,6 +481,7 @@ int tt_d_tocsv( tt_d_t* d, int fd, tt_p_t* curpr, tt_t_t* curtsk){
   return 0; 
 }
 
+/* FIXME: Issue #12: after starting a run a phantasy stop date is written */
 int tt_t_tocsv( tt_t_t* t, int fd, tt_p_t* curpr){
   if(t->nruns){
     for( int i = 0; i < t->nruns; i++){
