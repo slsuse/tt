@@ -190,8 +190,10 @@ void do_t_ls(int argc, char** argv, tt_db_t* db){
       else{
         for( int i = 4; i < argc; i++){
           tt_t_t* t = tt_p_find_task(p,argv[i]);
-          if(t)
+          if(t){
+            fprintf(stdout, "  %s\n", t->name);
             tt_t_ls( t, stdout);
+          }
           else{
             fprintf(stderr, "%s no such task\n", argv[i]);
           }
@@ -247,7 +249,6 @@ void do_add_t(int argc, char** argv, tt_db_t* db){
 }
 
 
-/*Bug: stoping a task creates phantasy entry. */
 void do_rm_t( int argc, char** argv, tt_db_t* db){
   tt_p_t* p = NULL;
  
@@ -260,9 +261,6 @@ void do_rm_t( int argc, char** argv, tt_db_t* db){
   
 }
 
-/*Bug: Issue #12, starting a task creates phantasy entry. 
-  https://github.com/slsuse/tt/issues/12
- */
 void do_start_t(int argc, char** argv, tt_db_t* db){
   tt_t_t* t = NULL;
   tt_p_t* p = NULL;

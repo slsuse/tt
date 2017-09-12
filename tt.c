@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "tt.h"
+#include <sys/time.h>
 
 tt_d_t* tt_d_new(time_t start, time_t finished){
   tt_d_t* ret = NULL;
@@ -139,6 +140,58 @@ int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2){
   return ((d1->start == d2->start) && (d1->finished == d2->finished));
 }
 
+void seconds_to_hours(time_t t, int* sec, int* min, int* h){
+  int s = (int) t;
+
+  *h = s / 3600;
+  s = s % 3600;
+  *min = s / 60;
+  *sec = s % 60;
+}
+
+int tt_d_ls(tt_d_t* d, FILE* stream){
+  char buf1[32];
+  char buf2[32];
+  char buf3[64];
+  int h, m, s;
+  char* nl = 0x0;
+  time_t end;
+   
+  if(!d)
+    return -1;
+
+  if(0 == d->start){
+    fprintf(stream, "N/A -- N/A: 0 seconds.\n");
+    return 0;
+  }
+  if( NULL == ctime_r(&(d->start), buf1))
+    return -2;
+  nl = strchr(buf1,'\n');
+  *nl = 0x0;
+  
+  if(0 == d->finished){
+    /* use the current time to calculate a duration is more useful */
+   
+    end = time(NULL);
+  
+    
+    sprintf( buf2, "N/A");    
+  }
+  else{
+    end = d->finished;
+    
+    if( NULL == ctime_r(&end, buf2))
+      return -3;
+    nl = strchr(buf2,'\n');
+    *nl = 0x0;
+  }  
+  seconds_to_hours(end - d->start, &s, &m, &h);
+  snprintf(buf3,63,"%d hours, %d minutes, and %d seconds" ,h, m, s);
+  
+  fprintf(stream, "    %s -- %s, i.e. %s\n", buf1, buf2, buf3);
+  return 0;
+}
+
 
 /* start a run on a given task
    return below 0 on error
@@ -183,12 +236,11 @@ int tt_t_stop_run(tt_t_t* task){
 }
 
 /* list the runs of a given task */
-/*FIXME: Issue #12 misbehaviour on finished == 0 */
 int tt_t_ls(tt_t_t* t, FILE* stream){
-  char buf1[26] = "N/A";
+  /*  char buf1[26] = "N/A";
   char buf2[26] = "N/A";
   char* tmp = NULL;
-
+  */
   if( NULL == t)
     return -1;
   if(NULL == stream)
@@ -199,6 +251,8 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
     return 0;
   }
   for( int i = 0; i < t->nruns; i++){
+    tt_d_ls(t->runs[i], stream);
+    /*
     if( 0 != t->runs[i]->start){
       if( NULL == ctime_r(&(t->runs[i]->start), buf1))
         return -3;
@@ -217,6 +271,7 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
       if( 0> fprintf( stream, "%s -- %s\n", buf1, buf2))
         return -5;
     }
+    */
   }
   return t->nruns;
 }
@@ -403,7 +458,7 @@ int tt_p_ls(tt_p_t* p, FILE* stream){
     return 0;
 
   for( int i = 0; i < p->ntasks; i++){
-    if( 0 > fprintf( stream, "%s\n", p->tasklist[i]->name))
+    if( 0 > fprintf( stream, "  %s\n", p->tasklist[i]->name))
       return -3;
   }
   return p->ntasks;
@@ -423,7 +478,7 @@ int tt_p_lsr(tt_p_t* p, FILE* stream){
     return 0;
   }
   for( int i = 0; i < p->ntasks; i++){
-    if( 0 > fprintf( stream, "%s\n", p->tasklist[i]->name))
+    if( 0 > fprintf( stream, "  %s\n", p->tasklist[i]->name))
       return -3;
     if( 0 > tt_t_ls(p->tasklist[i], stream))
       return -4;
