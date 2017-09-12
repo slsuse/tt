@@ -79,6 +79,14 @@ time_t tt_d_stop(tt_d_t* d);
 
 int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2);
 
+int tt_d_ls(tt_d_t* d, FILE* stream);
+
+/* d->finished - d-start or current time - d->start */
+time_t tt_d_duration(tt_d_t* d);
+
+/* split the time_t seconds into hours + minutes + seconds. */
+void seconds_to_hours(time_t t, int* sec, int* min, int* h);
+
 /* malloc a new tt_task_struct
    expect a 0-terminated string which will be copied. */
 tt_t_t* tt_t_new( const char* name);
@@ -113,6 +121,9 @@ int tt_t_find_run(tt_t_t* task, tt_d_t* duration);
 /* list the runs of a given task */
 
 int tt_t_ls(tt_t_t* t, FILE* stream);
+
+time_t tt_t_sum(tt_t_t* t);
+int tt_t_prsum(tt_t_t* t, FILE* stream);
 
 /* malloc a new tt_project_struct
    expect a 0-terminated string which will be copied. */
@@ -160,6 +171,9 @@ int tt_p_ls(tt_p_t* p, FILE* stream);
 /* list all tasks of a given project recursively */
 int tt_p_lsr(tt_p_t* p, FILE* stream);
 
+
+time_t tt_p_sum(tt_p_t* p);
+int tt_p_prsum(tt_p_t*, FILE* stream);
 /* malloc a tt_db_struct.
    return NULL on error.
  */

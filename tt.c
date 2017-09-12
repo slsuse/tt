@@ -186,7 +186,7 @@ int tt_d_ls(tt_d_t* d, FILE* stream){
     *nl = 0x0;
   }  
   seconds_to_hours(end - d->start, &s, &m, &h);
-  snprintf(buf3,63,"%d hours, %d minutes, and %d seconds" ,h, m, s);
+  snprintf(buf3,63,"%d h, %d min, and %d sec" ,h, m, s);
   
   fprintf(stream, "    %s -- %s, i.e. %s\n", buf1, buf2, buf3);
   return 0;
@@ -276,6 +276,72 @@ int tt_t_ls(tt_t_t* t, FILE* stream){
   return t->nruns;
 }
 
+time_t tt_d_duration(tt_d_t* d){
+  time_t end;
+
+  if(!d)
+    return -1;
+  
+  if(0 == d->start)
+    return 0;
+
+  end = d->finished;
+  if(0 == end)
+    end = time(NULL);
+
+  return end - d->start;
+}
+
+time_t tt_t_sum(tt_t_t* t){
+  time_t ret = 0;
+
+  if(!t)
+    return -1;
+
+  for(int i = 0; i < t->nruns; i++){
+    time_t tmp;
+    if(0 > (tmp = tt_d_duration(t->runs[i])))
+      return -2;
+    ret += tmp;
+  }
+  return ret;
+}
+
+int tt_t_prsum(tt_t_t* t, FILE* stream){
+  int h, m, s;
+  time_t duration;
+
+  if(0 > (duration = tt_t_sum(t)))
+    return -3;
+  seconds_to_hours(duration ,&s, &m, &h);
+  fprintf(stream, "%d h, %d min, and %d sec\n", h, m, s);
+  return duration;
+}
+
+time_t tt_p_sum(tt_p_t* p){
+  time_t ret =0;
+  if(!p)
+    return -1;
+
+  for( int i = 0; i < p->ntasks; i++){
+    time_t tmp;
+    if(0>(tmp=tt_t_sum(p->tasklist[i])))
+      return -2;
+    ret += tmp;
+  }
+  return ret;
+}
+
+int tt_p_prsum(tt_p_t* p, FILE* stream){
+  int h, m, s;
+  time_t duration;
+
+  if(0 > (duration = tt_p_sum(p)))
+    return -3;
+  seconds_to_hours(duration ,&s, &m, &h);
+  fprintf(stream, "%d h, %d min, and %d sec\n", h, m, s);
+  return duration;
+}
 
 /* malloc a new tt_project_struct
    expect a 0-terminated string which will be copied. */

@@ -12,11 +12,13 @@ typedef enum args{
   p_lsr,
   p_add,
   p_rm,
+  p_sum,
   t_ls,
   t_add,
   t_rm,
   t_start,
-  t_stop
+  t_stop,
+  t_sum
 } args_t;
 
 args_t args(int argc, char** argv){
@@ -37,7 +39,12 @@ args_t args(int argc, char** argv){
 
   if(argc > 2){
     if(0 == strcmp("-p", argv[1])){
-      
+
+      if(0 == strcmp("sum", argv[2])){
+        return p_sum;
+      }
+  
+
       if(0 == strcmp("ls", argv[2])){
         /*   if(argc == 2)
              return help;*/
@@ -58,6 +65,10 @@ args_t args(int argc, char** argv){
       
     }
     else if(0 == strcmp("-t", argv[1])){
+    
+      if(0 == strcmp("sum", argv[2])){
+        return t_sum;
+      }
     
       if(0 == strcmp("ls", argv[2])){
         /*   if(argc == 2)
@@ -302,6 +313,63 @@ void do_stop_t(int argc, char** argv, tt_db_t* db){
   }
 }
 
+void do_p_sum(int argc, char** argv, tt_db_t* db){
+  tt_p_t* p = NULL;
+  
+  if(argc == 3){
+    
+    for(int i = 0; i < db->nprojects; i++){
+      p = db->projects[i];
+      printf("%s: ", p->name);
+      tt_p_prsum(p,stdout);
+    }
+  }
+  else{
+    for( int i = 3; i < argc; i++){
+      tt_p_t* p = tt_db_find_project( db,argv[i]);
+      if(p){
+        printf("%s: ", p->name);
+        tt_p_prsum(p,stdout);
+      }
+      else
+        fprintf(stderr, "project '%s' not found.\n", argv[i]);
+    }
+  }
+  
+}
+
+void do_t_sum(int argc, char** argv, tt_db_t* db){
+  if(argc>3){
+    /* ttp -t ls projectname taskname taskname ... */
+    tt_p_t* p = tt_db_find_project( db,argv[3]);
+    if(p){
+      printf("%s:\n", p->name);
+      
+      if(argc == 4){ /*tt -p sum projectname*/
+        for( int i = 0; i < p->ntasks; i++){
+          tt_t_t* t =p->tasklist[i]; 
+          fprintf(stdout, "  %s: ", t->name);
+          tt_t_prsum(t,stdout);
+        }
+      }
+      else{
+        for( int i = 4; i < argc; i++){
+          tt_t_t* t = tt_p_find_task(p,argv[i]);
+          if(t){
+            fprintf(stdout, "  %s: ", t->name);
+            tt_t_prsum( t, stdout);
+          }
+          else{
+            fprintf(stderr, "%s no such task\n", argv[i]);
+          }
+        }
+      }
+    }
+    else
+      fprintf(stderr, "project '%s' not found.\n", argv[3]);
+  }
+}
+
 int main(int argc, char** argv){
   const char* dbfile = get_db_fname();
   tt_db_t* db = NULL;
@@ -325,6 +393,12 @@ int main(int argc, char** argv){
     break;
   case p_rm:
     do_rm_p(argc,argv, db);
+    break;
+  case p_sum:
+    do_p_sum(argc, argv, db);
+    break;
+  case t_sum:
+    do_t_sum(argc, argv, db);
     break;
   case t_ls:
     do_t_ls(argc, argv, db);
