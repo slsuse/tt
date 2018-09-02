@@ -199,7 +199,8 @@ int tt_d_ls(tt_d_t* d, FILE* stream, char filter){
 }
 
 
-/* start a run on a given task
+/* start a run on a given task,
+   stopping the last run.
    return below 0 on error
    or the start time else.
 */
@@ -210,18 +211,24 @@ int tt_t_start_run(tt_t_t* task){
     return -1;
   if(!(task->name))
     return -2;
-
+  
   if(!(d = tt_d_new(0, 0)))
     return -3;
+
+  
+  if( tt_t_stop_run(task) < 0)
+    return -6;
 
   if( !tt_d_start(d)){
     tt_d_free(d);
     return -4;
   }
+
   if(0 > tt_t_add_run(task, d)){
     tt_d_free(d);
     return -5;
   }
+
   return d->start;
 }
 /* finish the last (==current) run on a given task
@@ -683,7 +690,7 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
   for( int i = 0; i < db->nprojects; i++){
     if( 0 > fprintf( stream, "%s:\n", db->projects[i]->name))
       return -3;
-    if( 0 > tt_p_lsr(db->projects[i], stream))
+    if( 0 > tt_p_lsr(db->projects[i], stream, (char) 0))
       return -4;
   }
   return db->nprojects;

@@ -64,7 +64,7 @@ void test_t1(void){
   t = tt_t_new("t");
   tt_t_start_run(t);
   tt_t_stop_run(t);
-  tt_t_ls(t, stdout);
+  tt_t_ls(t, stdout, (char) 0);
 
  tt_t_free(t);
 }
@@ -80,7 +80,7 @@ void test_p1(void){
   tt_t_start_run(t);
   tt_p_add_task(p, t);
   printf("\nls:\n");
-  tt_p_ls(p, stdout);
+  tt_p_ls(p, stdout, (char) 0);
 
   {
     unsigned int rest = 0;
@@ -103,7 +103,7 @@ void test_p1(void){
   }
   /* tt_t_stop_run(t);*/
   printf("\nlsR:\n");
-  tt_p_lsr(p, stdout);
+  tt_p_lsr(p, stdout, (char) 0);
   tt_p_free(p);
 }
 

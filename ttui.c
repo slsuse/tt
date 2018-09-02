@@ -145,7 +145,7 @@ void do_p_lsr(int argc, char** argv, tt_db_t* db){
       tt_p_t* p = tt_db_find_project( db, argv[i]);
       if(p){
         printf("%s:\n", p->name);
-        tt_p_lsr( p, stdout);
+        tt_p_lsr( p, stdout, (char) 0);
       }
       else
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
@@ -179,7 +179,7 @@ void do_p_ls(int argc, char** argv, tt_db_t* db){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p){
         printf("%s:\n", p->name);
-        tt_p_ls( p, stdout);
+        tt_p_ls( p, stdout, (char) 0);
       }
       else
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
@@ -196,14 +196,14 @@ void do_t_ls(int argc, char** argv, tt_db_t* db){
       printf("%s:\n", p->name);
 
       if(argc == 4){
-        tt_p_lsr(p, stdout);
+        tt_p_lsr(p, stdout, (char) 0);
       }
       else{
         for( int i = 4; i < argc; i++){
           tt_t_t* t = tt_p_find_task(p,argv[i]);
           if(t){
             fprintf(stdout, "  %s\n", t->name);
-            tt_t_ls( t, stdout);
+            tt_t_ls( t, stdout, (char) 0);
           }
           else{
             fprintf(stderr, "%s no such task\n", argv[i]);

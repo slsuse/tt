@@ -79,7 +79,7 @@ time_t tt_d_stop(tt_d_t* d);
 
 int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2);
 
-int tt_d_ls(tt_d_t* d, FILE* stream);
+int tt_d_ls(tt_d_t* d, FILE* stream, char filter);
 
 /* d->finished - d-start or current time - d->start */
 time_t tt_d_duration(tt_d_t* d);
@@ -120,7 +120,7 @@ int tt_t_find_run(tt_t_t* task, tt_d_t* duration);
 
 /* list the runs of a given task */
 
-int tt_t_ls(tt_t_t* t, FILE* stream);
+int tt_t_ls(tt_t_t* t, FILE* stream, char filter);
 
 time_t tt_t_sum(tt_t_t* t);
 int tt_t_prsum(tt_t_t* t, FILE* stream);
@@ -166,10 +166,10 @@ tt_t_t* tt_p_find_task( tt_p_t* p, const char* tname);
 tt_t_t* tt_db_find_task(tt_db_t* db, const char* pname, const char* tname);
 
 /* list all tasks of a given project */
-int tt_p_ls(tt_p_t* p, FILE* stream);
+int tt_p_ls(tt_p_t* p, FILE* stream, char filter);
 
 /* list all tasks of a given project recursively */
-int tt_p_lsr(tt_p_t* p, FILE* stream);
+int tt_p_lsr(tt_p_t* p, FILE* stream, char filter);
 
 
 time_t tt_p_sum(tt_p_t* p);
