@@ -17,4 +17,4 @@
 
 ## Usage:
 
-TT_DB="test.csv"  ./ttp -p ls
+TT_DB="test.csv"  ./tt -p ls
