@@ -310,22 +310,25 @@ int parse_line(char* buf, tt_db_t* db, struct chunk* sc){
         db->next_prid = pid+1;/*FIXME: overflow*/
       tt_db_add_project(db,tmppr);
     }
-  
-    tmptsk = tt_p_find_task(tmppr,tname);
-    if(NULL == tmptsk){
-      tmptsk = tt_t_new(tname);
-      tt_t_setid(tmptsk, tid);
-      if(db->next_tskid <= tid)
-        db->next_tskid = tid+1;/*FIXME: overflow*/
-      tt_p_add_task(tmppr,tmptsk);
-    }
+    /* do not create a task when the project is in fact just an empty record */
+    if(*tname){
+      tmptsk = tt_p_find_task(tmppr,tname);
+      if(NULL == tmptsk){
+        tmptsk = tt_t_new(tname);
+        tt_t_setid(tmptsk, tid);
+        if(db->next_tskid <= tid)
+          db->next_tskid = tid+1;/*FIXME: overflow*/
+        tt_p_add_task(tmppr,tmptsk);
+      }
     
-    if( dstart){
-      tmpd = tt_d_new(dstart, dstop);
-      if(0 >= tt_t_find_run(tmptsk, tmpd))
-        tt_t_add_run(tmptsk, tmpd);
-      else
-        tt_d_free(tmpd);
+    
+      if( dstart){
+        tmpd = tt_d_new(dstart, dstop);
+        if(0 >= tt_t_find_run(tmptsk, tmpd))
+          tt_t_add_run(tmptsk, tmpd);
+        else
+          tt_d_free(tmpd);
+      }
     }
   }
   return 0;
