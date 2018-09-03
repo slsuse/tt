@@ -215,10 +215,10 @@ int tt_t_start_run(tt_t_t* task){
   if(!(d = tt_d_new(0, 0)))
     return -3;
 
+  if(task->nruns)
+    if( tt_t_stop_run(task) < 0)
+      return -6;
   
-  if( tt_t_stop_run(task) < 0)
-    return -6;
-
   if( !tt_d_start(d)){
     tt_d_free(d);
     return -4;
