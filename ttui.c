@@ -269,7 +269,7 @@ void do_p_ls(int argc, char** argv, tt_db_t* db, unsigned char filter){
 */
 void do_t_ls(int argc, char** argv, tt_db_t* db, unsigned char filter){
   if(argc>3){
-    /* ttp -t ls projectname taskname taskname ... */
+    /* tt -t ls projectname taskname taskname ... */
     tt_p_t* p = tt_db_find_project( db,argv[3]);
     if(p){
             

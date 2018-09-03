@@ -281,12 +281,18 @@ int tt_t_stop_this_run(tt_t_t* task, unsigned int i){
    281       if( task->runs[task->nruns]->finished)
 */
 int tt_t_isrunning(tt_t_t* task){
-  if( task->runs[task->nruns]->finished)
+  if( 0 != task->runs[task->nruns - 1]->finished)
     return 0;
   else
     return 1;
 }
 
+int tt_t_isstopped(tt_t_t* task){
+  if( task->runs[task->nruns-1]->finished)
+    return 1;
+  else
+    return 0;
+}
 /* check if any task in this project is still running.
    return 1 when a task is still clocked in
    return 0 else.
@@ -327,6 +333,7 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
   switch(filter){
   case 2: //is_running
     if(tt_t_isrunning(t)){
+       fprintf(stderr, "%s:%d t_ls tt_t_isrunning\n", __FILE__, __LINE__);
       for( int i = 0; i < t->nruns; i++){
         fprintf( stream, "\t\t[%*d] ", decplace, i);
         tt_d_ls(t->runs[i], stream, filter);
@@ -334,7 +341,9 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
     }
     break;
   case 1: //is_stopped
+    fprintf(stderr, "%s:%d t_ls case 1\n", __FILE__, __LINE__);
     if(0 == tt_t_isrunning(t)){
+      fprintf(stderr, "%s:%d 0 == tt_t_isrunning\n", __FILE__, __LINE__);
       for( int i = 0; i < t->nruns; i++){
         fprintf( stream, "\t\t[%*d] ", decplace, i);
         tt_d_ls(t->runs[i], stream, filter);
@@ -610,12 +619,14 @@ int tt_p_ls(tt_p_t* p, FILE* stream, char filter){
 
   switch(filter){
   case 0:
+    fprintf(stderr, "%s:%d p_ls case 0\n", __FILE__, __LINE__);
     for( int i = 0; i < p->ntasks; i++){
       if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
         return -3;
     }
     break;
-  case 3:
+  case 2:
+    fprintf(stderr, "%s:%d p_ls case 2\n", __FILE__, __LINE__);
     for( int i = 0; i < p->ntasks; i++){
       if(tt_t_is_running( p->tasklist[i])){
         if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
@@ -624,6 +635,7 @@ int tt_p_ls(tt_p_t* p, FILE* stream, char filter){
     }
     break;
   case 1:
+    fprintf(stderr, "%s:%d p_ls case 1\n", __FILE__, __LINE__);
     for( int i = 0; i < p->ntasks; i++){
       if( ! tt_t_is_running( p->tasklist[i])){
         if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
