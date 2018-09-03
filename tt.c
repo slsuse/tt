@@ -583,14 +583,14 @@ int tt_p_ls(tt_p_t* p, FILE* stream, char filter){
   switch(filter){
   case 0:
     for( int i = 0; i < p->ntasks; i++){
-      if( 0 > fprintf( stream, "  %s\n", p->tasklist[i]->name))
+      if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
         return -3;
     }
     break;
   case 3:
     for( int i = 0; i < p->ntasks; i++){
       if(tt_t_is_running( p->tasklist[i])){
-        if( 0 > fprintf( stream, "  %s\n", p->tasklist[i]->name))
+        if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
           return -4;
       }
     }
@@ -598,7 +598,7 @@ int tt_p_ls(tt_p_t* p, FILE* stream, char filter){
   case 1:
     for( int i = 0; i < p->ntasks; i++){
       if( ! tt_t_is_running( p->tasklist[i])){
-        if( 0 > fprintf( stream, "  %s\n", p->tasklist[i]->name))
+        if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
           return -5;
       }
     }
@@ -721,7 +721,7 @@ int tt_db_lsR(tt_db_t* db, FILE* stream){
     return 0;
 
   for( int i = 0; i < db->nprojects; i++){
-    if( 0 > fprintf( stream, "%s:\n", db->projects[i]->name))
+    if( 0 > fprintf( stream, "%s\n", db->projects[i]->name))
       return -3;
     if( 0 > tt_p_lsr(db->projects[i], stream, (char) 0))
       return -4;

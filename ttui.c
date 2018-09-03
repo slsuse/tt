@@ -116,6 +116,13 @@ void pr_help(const char* name){
   printf("\n -p ls [<project1> <project2> ...]\n");
   printf("                                    - list registered projects.\n");
   printf("\n -p lsr [<project1> <project2> ...] - list recursively, i.e. all data down to clocked times.\n");
+
+
+  printf("\n -p sum [<project1> <project2> ...]\n");
+  printf("                                    - summarize the tracked time for all (or the given) projects.\n");
+ 
+
+
   printf("\n -p add <project1> [<project2> <project3> ...]\n");
   printf("                                    - register a project.\n");
   printf("\n -p rm  <project>  [<project2> <project3> ...]\n");
@@ -123,9 +130,13 @@ void pr_help(const char* name){
   
   /*FIXME: printing tasks - give CLI some thought. */
   
-  printf("\n -t ls <project> <task> [<task2> <task3> ...]\n");
+  printf("\n -t ls <project> ls [<task2> <task3> ...]\n");
   printf("                                    - print task times.\n");
 
+
+  printf("\n -t sum <project> [<task2> <task3> ...]\n");
+  printf("                                    - summarize the tracked time for all (or the given) tasks in a project.\n");
+ 
 
   printf("\n -t add <project> <task> [<task2> <task3> ...]\n");
   printf("                                    - register tasks in a project.\n");
@@ -158,7 +169,7 @@ void do_p_lsr(int argc, char** argv, tt_db_t* db){
       
       tt_p_t* p = tt_db_find_project( db, argv[i]);
       if(p){
-        printf("%s:\n", p->name);
+        printf("%s\n", p->name);
         tt_p_lsr( p, stdout, (char) 0);
       }
       else
@@ -192,7 +203,7 @@ void do_p_ls(int argc, char** argv, tt_db_t* db){
     for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p){
-        printf("%s:\n", p->name);
+        printf("%s\n", p->name);
         tt_p_ls( p, stdout, (char) 0);
       }
       else
@@ -207,7 +218,7 @@ void do_t_ls(int argc, char** argv, tt_db_t* db){
     /* ttp -t ls projectname taskname taskname ... */
     tt_p_t* p = tt_db_find_project( db,argv[3]);
     if(p){
-      printf("%s:\n", p->name);
+      printf("%s\n", p->name);
 
       if(argc == 4){
         tt_p_lsr(p, stdout, (char) 0);
@@ -216,7 +227,7 @@ void do_t_ls(int argc, char** argv, tt_db_t* db){
         for( int i = 4; i < argc; i++){
           tt_t_t* t = tt_p_find_task(p,argv[i]);
           if(t){
-            fprintf(stdout, "  %s\n", t->name);
+            fprintf(stdout, "\t%s\n", t->name);
             tt_t_ls( t, stdout, (char) 0);
           }
           else{
@@ -362,12 +373,17 @@ void do_stop_t(int argc, char** argv, tt_db_t* db){
 
 void do_p_sum(int argc, char** argv, tt_db_t* db){
   tt_p_t* p = NULL;
+  unsigned int maxlen = 0;
   
   if(argc == 3){
-    
-    for(int i = 0; i < db->nprojects; i++){
+    for( int i = 0; i < db->nprojects; i++){
+      unsigned int l = strlen(db->projects[i]->name);
+      if(maxlen < l)
+        maxlen = l;
+    }
+    for( int i = 0; i < db->nprojects; i++){
       p = db->projects[i];
-      printf("%s: ", p->name);
+      printf("%*s\t", maxlen, p->name);
       tt_p_prsum(p,stdout);
     }
   }
@@ -375,7 +391,15 @@ void do_p_sum(int argc, char** argv, tt_db_t* db){
     for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p){
-        printf("%s: ", p->name);
+        unsigned int l = strlen(p->name);
+        if(maxlen < l)
+          maxlen = l;
+      }
+    }
+    for( int i = 3; i < argc; i++){
+      tt_p_t* p = tt_db_find_project( db,argv[i]);
+      if(p){
+        printf("%*s\t", maxlen, p->name);
         tt_p_prsum(p,stdout);
       }
       else
@@ -387,15 +411,22 @@ void do_p_sum(int argc, char** argv, tt_db_t* db){
 
 void do_t_sum(int argc, char** argv, tt_db_t* db){
   if(argc>3){
-    /* ttp -t ls projectname taskname taskname ... */
+    /* ttp -t sum projectname taskname taskname ... */
     tt_p_t* p = tt_db_find_project( db,argv[3]);
+    unsigned int maxlen = 0;
+    
     if(p){
-      printf("%s:\n", p->name);
+      printf("%s\n", p->name);
       
       if(argc == 4){ /*tt -p sum projectname*/
         for( int i = 0; i < p->ntasks; i++){
+          unsigned int l = strlen(p->tasklist[i]->name);
+          if(maxlen < l)
+            maxlen = l;
+        }
+        for( int i = 0; i < p->ntasks; i++){
           tt_t_t* t =p->tasklist[i]; 
-          fprintf(stdout, "  %s: ", t->name);
+          fprintf(stdout, "\t%*s\t", maxlen, t->name);
           tt_t_prsum(t,stdout);
         }
       }
@@ -403,7 +434,15 @@ void do_t_sum(int argc, char** argv, tt_db_t* db){
         for( int i = 4; i < argc; i++){
           tt_t_t* t = tt_p_find_task(p,argv[i]);
           if(t){
-            fprintf(stdout, "  %s: ", t->name);
+            unsigned int l = strlen( t->name);
+            if(maxlen < l)
+              maxlen = l;
+          }
+        }
+        for( int i = 4; i < argc; i++){
+          tt_t_t* t = tt_p_find_task(p,argv[i]);
+          if(t){
+            fprintf(stdout, "\t%*s\t", maxlen, t->name);
             tt_t_prsum( t, stdout);
           }
           else{
