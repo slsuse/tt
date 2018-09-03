@@ -123,6 +123,12 @@ int tt_t_stop_run(tt_t_t* task);
 */
 int tt_t_stop_this_run(tt_t_t* task, unsigned int i);
 
+/* check if last run on this task has a stop time stamp.
+   return 1 when task is still clocked in
+   return 0 if there is a stop time stamp.
+*/
+int tt_t_isrunning(tt_t_t* task);
+
 /* returns the index of the intervall in task->runs */
 int tt_t_find_run(tt_t_t* task, tt_d_t* duration);
 
@@ -159,6 +165,14 @@ int tt_p_add_task(tt_p_t* project, tt_t_t* task);
 /* remove first task named tname from tasklist, 
    return it or NULL otherwise */
 tt_t_t* tt_p_rm_task(tt_p_t* p, const char* tname);
+
+
+/* check if any task in this project is still running.
+   return 1 when a task is still clocked in
+   return 0 else.
+*/
+int tt_p_isrunning(tt_p_t* project);
+
 
 tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname);
 

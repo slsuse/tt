@@ -10,11 +10,15 @@ const char* default_file = "tt.csv";
 typedef enum args{
   help,
   p_ls,
-  p_lsr,
+  p_lsr, 
+  p_lsa,
+  p_lsd,
   p_add,
   p_rm,
   p_sum,
   t_ls,
+  t_lsa,
+  t_lsd,
   t_add,
   t_rm,
   t_start,
@@ -55,6 +59,13 @@ args_t args(int argc, char** argv){
   
       if(0 == strcmp("lsr", argv[2]))
         return p_lsr;
+
+      
+      if(0 == strcmp("lsa", argv[2]))
+        return p_lsa;
+  
+      if(0 == strcmp("lsd", argv[2]))
+        return p_lsd;
   
       if(0 == strcmp("add", argv[2])){
         if(argc < 4)
@@ -77,6 +88,13 @@ args_t args(int argc, char** argv){
              return help;*/
         return t_ls;
       }
+    
+      if(0 == strcmp("lsa", argv[2]))
+        return t_lsa;
+  
+      if(0 == strcmp("lsd", argv[2]))
+        return t_lsd;
+  
       if(0 == strcmp("add", argv[2]))
         return t_add;
       
@@ -160,7 +178,12 @@ void pr_help(const char* name){
 
 }
 
-void do_p_lsr(int argc, char** argv, tt_db_t* db){
+/* filter: 
+   0 and 3 - none
+   1 - is stopped
+   2 - is running.
+*/
+void do_p_lsr(int argc, char** argv, tt_db_t* db, unsigned int filter){
   if(argc == 3){
     tt_db_lsR(db, stdout);
   }
@@ -170,7 +193,7 @@ void do_p_lsr(int argc, char** argv, tt_db_t* db){
       tt_p_t* p = tt_db_find_project( db, argv[i]);
       if(p){
         printf("%s\n", p->name);
-        tt_p_lsr( p, stdout, (char) 0);
+        tt_p_lsr( p, stdout, filter);
       }
       else
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
@@ -191,20 +214,46 @@ const char* get_db_fname(void){
   
   return default_file;
 }
-
-void do_p_ls(int argc, char** argv, tt_db_t* db){
+ 
+/* filter: 
+   0 and 3 - none
+   1 - is stopped
+   2 - is running.
+*/
+void do_p_ls(int argc, char** argv, tt_db_t* db, unsigned char filter){
   if(argc == 3){
     
     for(int i = 0; i < db->nprojects; i++){
-      printf("%s\n", db->projects[i]->name);
+      switch(filter){
+      case 2:
+        if(0 == tt_p_isrunning(db->projects[i]))
+          break;
+      case 1:
+        if( tt_p_isrunning(db->projects[i]))
+          break;
+      default:
+        printf("%s\n", db->projects[i]->name);
+        break;
+      }
     }
   }
   else{
     for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p){
-        printf("%s\n", p->name);
-        tt_p_ls( p, stdout, (char) 0);
+        switch(filter){
+        case 2:
+          if(0 == tt_p_isrunning(db->projects[i]))
+            break;
+        case 1:
+          if( tt_p_isrunning(db->projects[i]))
+            break;
+        default:
+          
+          printf("%s\n", p->name);
+          tt_p_ls( p, stdout, filter);
+          break;
+        }
       }
       else
         fprintf(stderr, "project '%s' not found.\n", argv[i]);
@@ -213,22 +262,28 @@ void do_p_ls(int argc, char** argv, tt_db_t* db){
 }
 
 
-void do_t_ls(int argc, char** argv, tt_db_t* db){
+/* filter: 
+   0 and 3 - none
+   1 - is stopped
+   2 - is running.
+*/
+void do_t_ls(int argc, char** argv, tt_db_t* db, unsigned char filter){
   if(argc>3){
     /* ttp -t ls projectname taskname taskname ... */
     tt_p_t* p = tt_db_find_project( db,argv[3]);
     if(p){
+            
       printf("%s\n", p->name);
 
       if(argc == 4){
-        tt_p_lsr(p, stdout, (char) 0);
+        tt_p_lsr(p, stdout, filter);
       }
       else{
         for( int i = 4; i < argc; i++){
           tt_t_t* t = tt_p_find_task(p,argv[i]);
           if(t){
             fprintf(stdout, "\t%s\n", t->name);
-            tt_t_ls( t, stdout, (char) 0);
+            tt_t_ls( t, stdout, filter);
           }
           else{
             fprintf(stderr, "%s no such task\n", argv[i]);
@@ -469,10 +524,16 @@ int main(int argc, char** argv){
     pr_help(argv[0]);
     break;
   case p_ls:
-    do_p_ls(argc, argv, db);
+    do_p_ls(argc, argv, db, 0);
     break;
   case p_lsr:
-    do_p_lsr( argc, argv, db);
+    do_p_lsr( argc, argv, db, 0);
+    break;
+  case p_lsa:
+    do_p_ls( argc, argv, db, 2);
+    break;
+  case p_lsd:
+    do_p_ls( argc, argv, db, 1);
     break;
   case p_add:
     do_add_p(argc, argv, db);
@@ -487,7 +548,13 @@ int main(int argc, char** argv){
     do_t_sum(argc, argv, db);
     break;
   case t_ls:
-    do_t_ls(argc, argv, db);
+    do_t_ls(argc, argv, db, 0);
+    break;
+  case t_lsd:
+    do_t_ls( argc, argv, db, 1);
+    break;
+  case t_lsa:
+    do_t_ls( argc, argv, db, 2);
     break;
   case t_add:
     do_add_t(argc, argv, db);
