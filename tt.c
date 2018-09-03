@@ -191,7 +191,7 @@ int tt_d_ls(tt_d_t* d, FILE* stream, char filter){
     seconds_to_hours(end - d->start, &s, &m, &h);
     snprintf(buf3,63,"%d h, %d min, and %d sec" ,h, m, s);
     
-    fprintf(stream, "    %s -- %s, i.e. %s\n", buf1, buf2, buf3);
+    fprintf(stream, "\t%s -- %s, i.e. %s\n", buf1, buf2, buf3);
     break;
   }
   
@@ -277,6 +277,8 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
   char buf2[26] = "N/A";
   char* tmp = NULL;
   */
+  unsigned int decplace = 0;
+  unsigned int tmp = 0;
   if( NULL == t)
     return -1;
   if(NULL == stream)
@@ -286,8 +288,16 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
     /*    fprintf(stderr, "%s:%d - no runs\n", __FILE__, __LINE__ );*/
     return 0;
   }
+  
+  decplace = 1;
+  tmp = t->nruns;
+  while( tmp/10 >= 1){
+    tmp = tmp/10;
+    ++decplace;
+  }
+
   for( int i = 0; i < t->nruns; i++){
-    fprintf( stream, "[%d] ", i);
+    fprintf( stream, "\t\t[%*d] ", decplace, i);
     tt_d_ls(t->runs[i], stream, filter);
     /*
     if( 0 != t->runs[i]->start){
@@ -613,7 +623,7 @@ int tt_p_lsr(tt_p_t* p, FILE* stream, char filter){
     return 0;
   }
   for( int i = 0; i < p->ntasks; i++){
-    if( 0 > fprintf( stream, "  %s\n", p->tasklist[i]->name))
+    if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
       return -3;
     if( 0 > tt_t_ls(p->tasklist[i], stream, filter))
       return -4;

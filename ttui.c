@@ -108,33 +108,45 @@ args_t args(int argc, char** argv){
 
 void pr_help(const char* name){
   /* TODO: At this point GNU gengetopt might become worth the hassle. */
-  printf("%s [<command>]\n", name);
+  printf("\n%s [<command>] ", name);
   printf("where <command> is:\n");
 
-  printf("[-h|--help|h|help]                  - print this screen.\n");
+  printf("\n [-h|--help|h|help]                  - print this screen.\n");
 
-  printf(" -p ls [<project1> <project2> ...]\n");
+  printf("\n -p ls [<project1> <project2> ...]\n");
   printf("                                    - list registered projects.\n");
-  printf(" -p lsr [<project1> <project2> ...] - list recursively, i.e. all data down to clocked times.\n");
-  printf(" -p add <project1> [<project2> <project3> ...]\n");
+  printf("\n -p lsr [<project1> <project2> ...] - list recursively, i.e. all data down to clocked times.\n");
+  printf("\n -p add <project1> [<project2> <project3> ...]\n");
   printf("                                    - register a project.\n");
-  printf(" -p rm  <project>  [<project2> <project3> ...]\n");
+  printf("\n -p rm  <project>  [<project2> <project3> ...]\n");
   printf("                                    - rm a project.\n");
   
   /*FIXME: printing tasks - give CLI some thought. */
   
-  printf(" -t ls <project> <task> [<task2> <task3> ...]\n");
+  printf("\n -t ls <project> <task> [<task2> <task3> ...]\n");
   printf("                                    - print task times.\n");
 
 
-  printf(" -t add <project> <task> [<task2> <task3> ...]\n");
+  printf("\n -t add <project> <task> [<task2> <task3> ...]\n");
   printf("                                    - register tasks in a project.\n");
  
 
-  printf(" -t rm <project> <task> [<task2> <task3> ...]\n");
+  printf("\n -t rm <project> <task> [<task2> <task3> ...]\n");
   printf("                                    - remove tasks from a project.\n");
  
-            
+
+  printf("\n -t start <project> <task>\n");
+  printf("                                    - start a task in a project.\n");
+ 
+ 
+  printf("\n -t stop <project> <task>\n");
+  printf("                                    - stop tasks in a project.\n");
+ 
+  printf("\n -t stop <project> <task> [<index1> <index2> ...]\n");
+  printf("                                    - stop task runs with given indices in a project.\n");
+ 
+
+
 }
 
 void do_p_lsr(int argc, char** argv, tt_db_t* db){
