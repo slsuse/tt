@@ -104,6 +104,7 @@ unsigned int tt_t_getid( tt_t_t* t);
 int tt_t_add_run(tt_t_t* task, tt_d_t* duration);
 
 /* start a run on a given task
+   stopping the last run.
    return below 0 on error
    or the start time else.
 */
@@ -114,6 +115,13 @@ int tt_t_start_run(tt_t_t* task);
    or the finish time else.
 */
 int tt_t_stop_run(tt_t_t* task);
+
+
+/* finish the run  with index i on a given task
+   return below 0 on error
+   or the finish time else.
+*/
+int tt_t_stop_this_run(tt_t_t* task, unsigned int i);
 
 /* returns the index of the intervall in task->runs */
 int tt_t_find_run(tt_t_t* task, tt_d_t* duration);

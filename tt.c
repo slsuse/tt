@@ -215,10 +215,13 @@ int tt_t_start_run(tt_t_t* task){
   if(!(d = tt_d_new(0, 0)))
     return -3;
 
-  if(task->nruns)
-    if( tt_t_stop_run(task) < 0)
-      return -6;
-  
+  if(task->nruns){
+    if( 0 == task->runs[task->nruns - 1]->finished){
+      fprintf(stderr, "%s:%d - stopping last run\n", __FILE__, __LINE__);
+      if( tt_t_stop_run(task) < 0)
+        return -6;
+    }
+  }
   if( !tt_d_start(d)){
     tt_d_free(d);
     return -4;
@@ -248,6 +251,25 @@ int tt_t_stop_run(tt_t_t* task){
   return task->runs[task->nruns - 1]->finished = time(NULL);
 }
 
+int tt_t_stop_this_run(tt_t_t* task, unsigned int i){
+  if(!task)
+    return -2;
+
+  if(!(task->name))
+    return -3;
+
+  if(0 == task->len)
+    return -4;
+
+  if( task->nruns > i)
+    return task->runs[i]->finished = time(NULL);
+  else
+    return -5;
+}
+  
+
+
+  
 /* list the runs of a given task, if filter applies 
    for a start there's only one filter is_stopped with value 1 */
 int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
@@ -265,6 +287,7 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
     return 0;
   }
   for( int i = 0; i < t->nruns; i++){
+    fprintf( stream, "[%d] ", i);
     tt_d_ls(t->runs[i], stream, filter);
     /*
     if( 0 != t->runs[i]->start){

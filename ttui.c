@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 const char* default_file = "tt.csv";
 
@@ -18,6 +19,7 @@ typedef enum args{
   t_rm,
   t_start,
   t_stop,
+  // t_stop_run,
   t_sum
 } args_t;
 
@@ -298,6 +300,34 @@ void do_start_t(int argc, char** argv, tt_db_t* db){
 }
 
 
+void do_stop_run(int argc, char** argv, tt_db_t* db){
+  tt_t_t* t =NULL;
+  int ts = -100;
+   
+  if(argc < 6){
+    pr_help(argv[0]);
+    return;
+  }
+  t = tt_db_find_task(db,argv[3],argv[4]);
+  if(t){
+    unsigned int index = t->nruns - 1;
+    unsigned int curarg = 5;
+    char* tail = NULL;
+
+    for(curarg=5; curarg < argc; ++curarg){
+      errno = 0;
+      
+      index = strtoul(argv[curarg], &tail, 0);
+      if(errno){
+        perror("ttui.c/do_stop_run()");
+        return;
+      }
+      if(0 > (ts = tt_t_stop_this_run(t, index)))
+        fprintf(stderr, "%s:%d error setting timestamp: %d\n", __FILE__, __LINE__, ts);
+    }
+  }
+}
+
 void do_stop_t(int argc, char** argv, tt_db_t* db){
   tt_t_t* t =NULL;
   int ts = -100;
@@ -306,12 +336,17 @@ void do_stop_t(int argc, char** argv, tt_db_t* db){
     pr_help(argv[0]);
     return;
   }
-  t = tt_db_find_task(db,argv[3],argv[4]);
-  if(t){
-    if(0 > (ts = tt_t_stop_run(t)))
-      fprintf(stderr, "%s:%d error setting timestamp: %d\n", __FILE__, __LINE__, ts);
+  if(argc > 6)
+    do_stop_run(argc, argv, db);
+  else{
+    t = tt_db_find_task(db,argv[3],argv[4]);
+    if(t){
+      if(0 > (ts = tt_t_stop_run(t)))
+        fprintf(stderr, "%s:%d error setting timestamp: %d\n", __FILE__, __LINE__, ts);
+    }
   }
 }
+
 
 void do_p_sum(int argc, char** argv, tt_db_t* db){
   tt_p_t* p = NULL;
@@ -415,6 +450,10 @@ int main(int argc, char** argv){
   case t_stop:
     do_stop_t(argc, argv, db);
     break;
+    /* case t_stop_run:
+    do_stop_run(argc, argv, db);
+    break;
+    */
   default:
     pr_help(argv[0]);
     break;
