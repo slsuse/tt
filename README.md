@@ -11,10 +11,6 @@
 6. KISS principle: UNIX command line interface and plain text files (csv).
 7. NFS save.
 
-## TODO
-
-  * All of it.
-
 ## Usage:
 
 TT_DB="test.csv"  ./tt -p ls
