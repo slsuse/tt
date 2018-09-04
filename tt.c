@@ -145,9 +145,9 @@ void seconds_to_hours(time_t t, int* sec, int* min, int* h){
   *sec = s % 60;
 }
 
-/* list a duration d to stream, if filter applies 
-   for a start there's only one filter is_stopped with value 1 */
-int tt_d_ls(tt_d_t* d, FILE* stream, char filter){
+/* list a duration d to stream.
+ */
+int tt_d_ls(tt_d_t* d, FILE* stream){
   char buf1[32];
   char buf2[32];
   char buf3[64];
@@ -158,46 +158,35 @@ int tt_d_ls(tt_d_t* d, FILE* stream, char filter){
   if(!d)
     return -1;
 
-  switch(filter){
-  case 1: //is_stopped
-    if(0 == d->finished)
-      break;
-  case 2: //is_running
-    if(0 != d->finished)
-      break;
-   //case 3, 0 - no filter
-  default:
-    if(0 == d->start){
-      fprintf(stream, "N/A -- N/A: 0 seconds.\n");
-      return 0;
-    }
-    if( NULL == ctime_r(&(d->start), buf1))
-      return -2;
-    nl = strchr(buf1,'\n');
-    *nl = 0x0;
-    
-    if(0 == d->finished){
-      /* using the current time to calculate a duration is more useful */
-      
-      end = time(NULL);
-      
-      
-      sprintf( buf2, "N/A");    
-    }
-    else{
-      end = d->finished;
-      
-      if( NULL == ctime_r(&end, buf2))
-        return -3;
-      nl = strchr(buf2,'\n');
-      *nl = 0x0;
-    }  
-    seconds_to_hours(end - d->start, &s, &m, &h);
-    snprintf(buf3,63,"%d h, %d min, and %d sec" ,h, m, s);
-    
-    fprintf(stream, "\t%s -- %s, i.e. %s\n", buf1, buf2, buf3);
-    break;
+  if(0 == d->start){
+    fprintf(stream, "N/A -- N/A: 0 seconds.\n");
+    return 0;
   }
+  if( NULL == ctime_r(&(d->start), buf1))
+    return -2;
+  nl = strchr(buf1,'\n');
+  *nl = 0x0;
+  
+  if(0 == d->finished){
+    /* using the current time to calculate a duration is more useful */
+    
+    end = time(NULL);
+    
+    
+    sprintf( buf2, "N/A");    
+  }
+  else{
+    end = d->finished;
+      
+    if( NULL == ctime_r(&end, buf2))
+      return -3;
+    nl = strchr(buf2,'\n');
+    *nl = 0x0;
+  }  
+  seconds_to_hours(end - d->start, &s, &m, &h);
+  snprintf(buf3,63,"%d h, %d min, and %d sec" ,h, m, s);
+    
+  fprintf(stream, "\t%s -- %s, i.e. %s\n", buf1, buf2, buf3);
   
   return 0;
 }
@@ -272,27 +261,43 @@ int tt_t_stop_this_run(tt_t_t* task, unsigned int i){
 }
   
 
+int tt_t_isrunning(tt_t_t* t){
 
-/* check if last run on this task has a stop time stamp.
-   return 1 when task is still clocked in
-   return 0 if there is a stop time stamp.
-   FIXME: Program received signal SIGSEGV, Segmentation fault.
-   0x0000000000402dd0 in tt_t_isrunning (task=0x60c610) at tt.c:281
-   281       if( task->runs[task->nruns]->finished)
-*/
-int tt_t_isrunning(tt_t_t* task){
-  if( 0 != task->runs[task->nruns - 1]->finished)
+  for( int i = 0; i < t->nruns; i++){
+    if( 0 == t->runs[i]->finished)
+      return 1;
+  }
+  return 0;
+}
+
+int tt_t_isstopped(tt_t_t* t){
+  /* if the task no runs at all, it can't be a stopped one. */
+  if(t->nruns == 0)
+    return 0;
+  
+  for( int i = 0; i < t->nruns; i++){
+    if( 0 == t->runs[i]->finished)
+      return 0;
+  }
+  return 1;
+  
+}
+  
+
+int tt_d_isstopped(tt_d_t* d){
+  if(0 == d->finished)
     return 0;
   else
     return 1;
 }
 
-int tt_t_isstopped(tt_t_t* task){
-  if( task->runs[task->nruns-1]->finished)
+int tt_d_isrunning(tt_d_t* d){
+  if(0 == d->finished)
     return 1;
   else
     return 0;
 }
+
 /* check if any task in this project is still running.
    return 1 when a task is still clocked in
    return 0 else.
@@ -300,6 +305,18 @@ int tt_t_isstopped(tt_t_t* task){
 int tt_p_isrunning(tt_p_t* project){
   for( int i = 0; i < project->ntasks; i++){
     if( tt_t_isrunning(project->tasklist[i]))
+      return 1;
+  }
+  return 0;
+}
+
+/* check if any task in this project is still running.
+   return 0 when a task is still clocked in
+   return 1 else.
+*/
+int tt_p_isstopped(tt_p_t* project){
+  for( int i = 0; i < project->ntasks; i++){
+    if( tt_t_isstopped(project->tasklist[i]))
       return 1;
   }
   return 0;
@@ -320,7 +337,7 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
     return -2;
   
   if(0 == t->nruns){
-    /*    fprintf(stderr, "%s:%d - no runs\n", __FILE__, __LINE__ );*/
+
     return 0;
   }
   
@@ -332,29 +349,30 @@ int tt_t_ls(tt_t_t* t, FILE* stream, char filter){
   }
   switch(filter){
   case 2: //is_running
-    if(tt_t_isrunning(t)){
-       fprintf(stderr, "%s:%d t_ls tt_t_isrunning\n", __FILE__, __LINE__);
-      for( int i = 0; i < t->nruns; i++){
+
+    for( int i = 0; i < t->nruns; i++){            //TODO: only unfinished runs
+      if( tt_d_isrunning(t->runs[i])){
         fprintf( stream, "\t\t[%*d] ", decplace, i);
-        tt_d_ls(t->runs[i], stream, filter);
+        tt_d_ls(t->runs[i], stream);
       }
     }
     break;
   case 1: //is_stopped
-    fprintf(stderr, "%s:%d t_ls case 1\n", __FILE__, __LINE__);
-    if(0 == tt_t_isrunning(t)){
-      fprintf(stderr, "%s:%d 0 == tt_t_isrunning\n", __FILE__, __LINE__);
-      for( int i = 0; i < t->nruns; i++){
+    
+    for( int i = 0; i < t->nruns; i++){           //TODO: Only finished runs
+      if(tt_d_isstopped(t->runs[i])){
+
         fprintf( stream, "\t\t[%*d] ", decplace, i);
-        tt_d_ls(t->runs[i], stream, filter);
+        tt_d_ls(t->runs[i], stream);
       }
     }
+    
     break;
   case 3:
   default: //case 0 or 3 - no filter
     for( int i = 0; i < t->nruns; i++){
       fprintf( stream, "\t\t[%*d] ", decplace, i);
-      tt_d_ls(t->runs[i], stream, filter);
+      tt_d_ls(t->runs[i], stream);
     }
   }
   return t->nruns;
@@ -595,15 +613,6 @@ tt_t_t* tt_db_find_task(tt_db_t* db,
   return NULL;
 }
 
-int tt_t_is_running(tt_t_t* t){
-
-  for( int i = 0; i < t->nruns; i++){
-    if( 0 == t->runs[i]->finished)
-      return 0;
-  }
-  return 1;
-}
-
 /* list all tasks of a given project, if filter applies 
    for a start there's only one filter is_stopped 
    with value 1 for stopped and 3 for running */
@@ -619,25 +628,25 @@ int tt_p_ls(tt_p_t* p, FILE* stream, char filter){
 
   switch(filter){
   case 0:
-    fprintf(stderr, "%s:%d p_ls case 0\n", __FILE__, __LINE__);
+    
     for( int i = 0; i < p->ntasks; i++){
       if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
         return -3;
     }
     break;
   case 2:
-    fprintf(stderr, "%s:%d p_ls case 2\n", __FILE__, __LINE__);
+    
     for( int i = 0; i < p->ntasks; i++){
-      if(tt_t_is_running( p->tasklist[i])){
+      if(tt_t_isrunning( p->tasklist[i])){
         if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
           return -4;
       }
     }
     break;
   case 1:
-    fprintf(stderr, "%s:%d p_ls case 1\n", __FILE__, __LINE__);
+    
     for( int i = 0; i < p->ntasks; i++){
-      if( ! tt_t_is_running( p->tasklist[i])){
+      if( tt_t_isstopped( p->tasklist[i])){
         if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
           return -5;
       }
@@ -659,24 +668,38 @@ int tt_p_lsr(tt_p_t* p, FILE* stream, char filter){
 
    
   if(0 == p->ntasks){
-    /* fprintf(stderr, "%s:%d - no tasks\n", __FILE__, __LINE__ );*/
+    
     return 0;
   }
   for( int i = 0; i < p->ntasks; i++){
-    if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
-      return -3;
     switch(filter){
+      
     case 2: //is_running
-      if(tt_t_is_running(p->tasklist[i]))
+      if(tt_t_isrunning(p->tasklist[i])){
+        
+        if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
+          return -3;
+   
         if( 0 > tt_t_ls(p->tasklist[i], stream, filter))
           return -4;
+      }      
       break;
+      
     case 1: //is_stopped
-      if(0 == tt_t_is_running(p->tasklist[i]))
+      if(tt_t_isstopped(p->tasklist[i])){
+        if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
+          return -3;
+        
         if( 0 > tt_t_ls(p->tasklist[i], stream, filter))
           return -4;
+      }
+      break;
+      
     case 3:
     default: //case 0 or 3 - no filter
+      if( 0 > fprintf( stream, "\t%s\n", p->tasklist[i]->name))
+        return -3;
+      
       if( 0 > tt_t_ls(p->tasklist[i], stream, filter))
         return -4;
     }

@@ -77,9 +77,19 @@ time_t tt_d_start(tt_d_t* d);
 */
 time_t tt_d_stop(tt_d_t* d);
 
+/* return 1 if d has a finished time stamp,
+   0 else.
+*/
+int tt_d_isstopped(tt_d_t* d);
+
+/* return 0 if d has a finished time stamp,
+   1 else.
+*/
+int tt_d_isrunning(tt_d_t* d);
+
 int tt_d_same_intervall( tt_d_t* d1,  tt_d_t* d2);
 
-int tt_d_ls(tt_d_t* d, FILE* stream, char filter);
+int tt_d_ls(tt_d_t* d, FILE* stream);
 
 /* d->finished - d-start or current time - d->start */
 time_t tt_d_duration(tt_d_t* d);
@@ -129,6 +139,13 @@ int tt_t_stop_this_run(tt_t_t* task, unsigned int i);
 */
 int tt_t_isrunning(tt_t_t* task);
 
+
+/* check if last run on this task has a stop time stamp.
+   return 0 when task is still clocked in
+   return 1 if there is a stop time stamp.
+*/
+int tt_t_isstopped(tt_t_t* t);
+
 /* returns the index of the intervall in task->runs */
 int tt_t_find_run(tt_t_t* task, tt_d_t* duration);
 
@@ -173,6 +190,11 @@ tt_t_t* tt_p_rm_task(tt_p_t* p, const char* tname);
 */
 int tt_p_isrunning(tt_p_t* project);
 
+/* check if any task in this project is still running.
+   return 0 when a task is still clocked in
+   return 1 else.
+*/
+int tt_p_isstopped(tt_p_t* project);
 
 tt_p_t* tt_db_find_project( tt_db_t* db, const char* pname);
 

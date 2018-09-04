@@ -129,12 +129,16 @@ void pr_help(const char* name){
   printf("\n%s [<command>] ", name);
   printf("where <command> is:\n");
 
-  printf("\n [-h|--help|h|help]                  - print this screen.\n");
+  printf("\n [-h|--help|h|help]                 - print this screen.\n");
 
   printf("\n -p ls [<project1> <project2> ...]\n");
   printf("                                    - list registered projects.\n");
   printf("\n -p lsr [<project1> <project2> ...] - list recursively, i.e. all data down to clocked times.\n");
 
+
+  printf("\n -p lsa                             - (list active) list projects with running tasks.\n");
+
+  printf("\n -p lsd                             - (list done) list projects with finished tasks.\n");
 
   printf("\n -p sum [<project1> <project2> ...]\n");
   printf("                                    - summarize the tracked time for all (or the given) projects.\n");
@@ -148,8 +152,16 @@ void pr_help(const char* name){
   
   /*FIXME: printing tasks - give CLI some thought. */
   
-  printf("\n -t ls <project> ls [<task2> <task3> ...]\n");
+  printf("\n -t ls <project> [<task2> <task3> ...]\n");
   printf("                                    - print task times.\n");
+
+
+  printf("\n -t lsa <project> [<task2> <task3> ...]\n");
+  printf("                                    - list active runs.\n");
+
+
+  printf("\n -t lsd <project> ls [<task2> <task3> ...]\n");
+  printf("                                    - list finished runs.\n");
 
 
   printf("\n -t sum <project> [<task2> <task3> ...]\n");
@@ -184,6 +196,7 @@ void pr_help(const char* name){
    2 - is running.
 */
 void do_p_lsr(int argc, char** argv, tt_db_t* db, unsigned int filter){
+  
   if(argc == 3){
     tt_db_lsR(db, stdout);
   }
@@ -222,32 +235,46 @@ const char* get_db_fname(void){
 */
 void do_p_ls(int argc, char** argv, tt_db_t* db, unsigned char filter){
   if(argc == 3){
-    
+
     for(int i = 0; i < db->nprojects; i++){
       switch(filter){
       case 2:
-        if(0 == tt_p_isrunning(db->projects[i]))
-          break;
+        if( tt_p_isrunning(db->projects[i])){
+           printf("%s\n", db->projects[i]->name);
+        }
+        break;
       case 1:
-        if( tt_p_isrunning(db->projects[i]))
-          break;
+        if( tt_p_isstopped(db->projects[i])){
+          printf("%s\n", db->projects[i]->name);
+        }
+        break;
       default:
+
         printf("%s\n", db->projects[i]->name);
         break;
       }
     }
   }
   else{
+
     for( int i = 3; i < argc; i++){
       tt_p_t* p = tt_db_find_project( db,argv[i]);
       if(p){
         switch(filter){
         case 2:
-          if(0 == tt_p_isrunning(db->projects[i]))
-            break;
+          if(0 == tt_p_isrunning(db->projects[i])){
+            
+            printf("%s\n", p->name);
+            tt_p_ls( p, stdout, filter);
+          }
+          break;
         case 1:
-          if( tt_p_isrunning(db->projects[i]))
-            break;
+          if( tt_p_isstopped(db->projects[i])){
+            
+            printf("%s\n", p->name);
+            tt_p_ls( p, stdout, filter);
+          }
+          break;
         default:
           
           printf("%s\n", p->name);
